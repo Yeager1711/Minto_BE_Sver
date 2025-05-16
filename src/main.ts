@@ -29,7 +29,6 @@ async function bootstrap() {
         const port = configService.get<number>('PORT') || 10000;
         const allowedOrigins = configService.get<string>('CORS_ORIGINS')?.split(',') || [
                 'http://localhost:9000',
-                'http://192.168.1.16:9000',
                 'https://mintoinvitions.netlify.app/'
         ];
 
