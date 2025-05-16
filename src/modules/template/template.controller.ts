@@ -85,7 +85,7 @@ export class TemplateController {
 
                 // Tạo tên file mới và lưu file vào thư mục templates (không dùng Uploads)
                 const fileName = `image-${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`;
-                const filePath = join(__dirname, '..', '..', '..', 'template_images', fileName);
+                const filePath = join(process.cwd(), 'template_images', fileName);
                 try {
                         writeFileSync(filePath, file.buffer);
                 } catch (error) {
