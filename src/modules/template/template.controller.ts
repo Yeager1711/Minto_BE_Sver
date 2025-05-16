@@ -83,30 +83,26 @@ export class TemplateController {
                         );
                 }
 
-                let imageUrl: string;
                 const fileName = `image-${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`;
-                if (!file.path) {
-                        const filePath = join(
-                                __dirname,
-                                '..',
-                                '..',
-                                '..',
-                                'Uploads',
-                                'templates',
-                                fileName
+                const filePath = join(
+                        __dirname,
+                        '..',
+                        '..',
+                        '..',
+                        'Uploads',
+                        'templates',
+                        fileName
+                );
+                try {
+                        writeFileSync(filePath, file.buffer);
+                } catch (error) {
+                        throw new HttpException(
+                                'Lỗi khi lưu file ảnh',
+                                HttpStatus.INTERNAL_SERVER_ERROR
                         );
-                        try {
-                                writeFileSync(filePath, file.buffer);
-                                imageUrl = `uploads/templates/${fileName}`; // Lưu đường dẫn tương đối
-                        } catch (error) {
-                                throw new HttpException(
-                                        'Lỗi khi lưu file ảnh',
-                                        HttpStatus.INTERNAL_SERVER_ERROR
-                                );
-                        }
-                } else {
-                        imageUrl = `uploads/templates/${fileName}`; // Dùng tên file từ Multer
                 }
+
+                const imageUrl = `templates/${fileName}`;
 
                 const newTemplate = await this.templateService.create({
                         template_id: templateId,

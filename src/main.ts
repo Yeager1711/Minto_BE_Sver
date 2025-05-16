@@ -34,14 +34,13 @@ async function bootstrap() {
 
         // Configure CORS
         app.enableCors({
-                // origin: (origin, callback) => {
-                //         if (!origin || allowedOrigins.includes(origin)) {
-                //                 callback(null, true);
-                //         } else {
-                //                 callback(new Error('Not allowed by CORS'));
-                //         }
-                // },
-                origin: '*',
+                origin: (origin, callback) => {
+                        if (!origin || allowedOrigins.includes(origin)) {
+                                callback(null, true);
+                        } else {
+                                callback(new Error('Not allowed by CORS'));
+                        }
+                },
                 credentials: true,
                 methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
                 allowedHeaders: 'Content-Type, Authorization, ngrok-skip-browser-warning',
