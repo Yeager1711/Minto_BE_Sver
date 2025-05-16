@@ -83,6 +83,7 @@ export class TemplateController {
                         );
                 }
 
+                // Tạo tên file mới và lưu file vào thư mục templates
                 const fileName = `image-${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`;
                 const filePath = join(
                         __dirname,
@@ -102,7 +103,8 @@ export class TemplateController {
                         );
                 }
 
-                const imageUrl = `templates/${fileName}`;
+                // Chỉ lưu tên file vào database, không bao gồm "uploads/templates/"
+                const imageUrl = fileName; // Chỉ lưu "image-1747406415752-500070071.png"
 
                 const newTemplate = await this.templateService.create({
                         template_id: templateId,
