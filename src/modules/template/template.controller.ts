@@ -83,20 +83,8 @@ export class TemplateController {
                         );
                 }
 
-                // Tạo tên file mới và lưu file vào thư mục templates (không dùng Uploads)
-                const fileName = `image-${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`;
-                const filePath = join(process.cwd(), 'template_images', fileName);
-                try {
-                        writeFileSync(filePath, file.buffer);
-                } catch (error) {
-                        throw new HttpException(
-                                'Lỗi khi lưu file ảnh',
-                                HttpStatus.INTERNAL_SERVER_ERROR
-                        );
-                }
-
-                // Lưu tên file vào database
-                const imageUrl = fileName;
+                // Chuyển đổi file thành base64, chỉ lưu chuỗi base64 thuần
+                const base64Image = file.buffer.toString('base64');
 
                 const newTemplate = await this.templateService.create({
                         template_id: templateId,
@@ -105,13 +93,19 @@ export class TemplateController {
                         price,
                         category_id: categoryId,
                         status: createTemplateDto.status,
-                        image_url: imageUrl,
+                        image_url: base64Image, // Lưu chuỗi base64 thuần
                 });
+
+                // Tái tạo data URI khi trả về cho client, giả định mặc định là image/png
+                const responseImageUrl = `data:image/png;base64,${base64Image}`;
 
                 return {
                         statusCode: HttpStatus.CREATED,
                         message: 'Mẫu đã được tạo thành công',
-                        data: newTemplate,
+                        data: {
+                                ...newTemplate,
+                                image_url: responseImageUrl, // Trả về data URI đầy đủ cho client
+                        },
                 };
         }
 

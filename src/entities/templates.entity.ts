@@ -19,9 +19,9 @@ export class Templates {
         @Column({ type: 'text', nullable: true, comment: 'Mô tả mẫu' })
         description: string;
 
-        @Column({ type: 'varchar', length: 255, nullable: false, comment: 'Ảnh đại diện của mẫu' })
+        @Column({ type: 'longtext', nullable: false, comment: 'Ảnh đại diện của mẫu' })
         image_url: string;
-
+        
         @Column({
                 type: 'decimal',
                 precision: 10,

@@ -3,21 +3,13 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as bodyParser from 'body-parser';
-import { join } from 'path';
-import * as fs from 'fs';
 
 async function bootstrap() {
         const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-        // Ensure templates directory exists (không dùng Uploads)
-        const templateDir = './template_images';
-        if (!fs.existsSync(templateDir)) {
-                fs.mkdirSync(templateDir, { recursive: true });
-        }
-
         // Get configuration from ConfigService
         const configService = app.get(ConfigService);
-        const port = configService.get<number>('PORT') || 10000;
+        const port = configService.get<number>('PORT') || 5000;
         const allowedOrigins = configService.get<string>('CORS_ORIGINS')?.split(',') || [
                 'http://localhost:9000',
                 'https://mintoinvitions.netlify.app/',
@@ -35,11 +27,6 @@ async function bootstrap() {
                 credentials: true,
                 methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
                 allowedHeaders: 'Content-Type, Authorization, ngrok-skip-browser-warning',
-        });
-
-        // Configure static file serving from 'templates' directory
-        app.useStaticAssets(join(__dirname, '..', 'templates'), {
-                prefix: '/templates',
         });
 
         // Increase request size limit to 10MB

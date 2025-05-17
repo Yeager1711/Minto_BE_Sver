@@ -146,8 +146,8 @@ if (process.env.NODE_ENV !== 'production') {
 // import { ConfigModule } from '@nestjs/config';
 // import { JwtModule } from '@nestjs/jwt';
 // import { MulterModule } from '@nestjs/platform-express';
-// import { diskStorage } from 'multer';
-// import { extname, join } from 'path';
+// import { memoryStorage } from 'multer';
+// import { join } from 'path';
 
 // // Entities
 // import { Users } from './entities/users.entity';
@@ -172,8 +172,6 @@ if (process.env.NODE_ENV !== 'production') {
 // import { AuthUserLoginModule } from './modules/auth/login/login_user.module';
 // import { CardModule } from './modules/card/card.module';
 
-// const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
-
 // @Module({
 //         imports: [
 //                 ConfigModule.forRoot({
@@ -183,10 +181,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                 TypeOrmModule.forRoot({
 //                         type: 'mysql',
 //                         host: '127.0.0.1',
-//                         port: parseInt(process.env.DB_PORT, 10) || 3306,
-//                         username: process.env.DB_USER || 'root',
-//                         password: process.env.DB_PASSWORD || '',
-//                         database: process.env.DB_NAME || 'minto',
+//                         port: 3306,
+//                         username: 'root',
+//                         password: '',
+//                         database: 'minto',
 //                         entities: [
 //                                 Users,
 //                                 Role,
@@ -202,20 +200,12 @@ if (process.env.NODE_ENV !== 'production') {
 //                         synchronize: false,
 //                 }),
 //                 JwtModule.register({
-//                         global: true, // Đăng ký toàn cục
+//                         global: true,
 //                         secret: process.env.JWT_SECRET || 'MintoInvitiOnsJWTSECRET_KEYVALUES',
 //                         signOptions: { expiresIn: '1d' },
 //                 }),
 //                 MulterModule.register({
-//                         storage: diskStorage({
-//                                 destination: uploadDir,
-//                                 filename: (req, file, callback) => {
-//                                         const uniqueSuffix =
-//                                                 Date.now() + '-' + Math.round(Math.random() * 1e9);
-//                                         const ext = extname(file.originalname);
-//                                         callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-//                                 },
-//                         }),
+//                         storage: memoryStorage(), // Sử dụng memoryStorage thay vì diskStorage
 //                         fileFilter: (req, file, callback) => {
 //                                 if (!file.mimetype.match(/image\/(jpg|jpeg|png|gif)$/)) {
 //                                         return callback(
@@ -251,7 +241,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                                         path: 'cards/guest/:template_id/:guest_id/:invitation_id',
 //                                         method: RequestMethod.GET,
 //                                 },
-//                                 { path: 'templates/getTemplate/template_id', method: RequestMethod.GET }
+//                                 {
+//                                         path: 'templates/getTemplate/template_id',
+//                                         method: RequestMethod.GET,
+//                                 }
 //                         )
 //                         .forRoutes(
 //                                 { path: 'users/profile', method: RequestMethod.GET },
@@ -270,5 +263,5 @@ if (process.env.NODE_ENV !== 'production') {
 //                 username: process.env.DB_USER,
 //                 database: process.env.DB_NAME,
 //         });
-//         console.log('JWT_SECRET:', process.env.JWT_SECRET); // Ghi log để kiểm tra JWT_SECRET
+//         console.log('JWT_SECRET:', process.env.JWT_SECRET);
 // }
