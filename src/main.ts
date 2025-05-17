@@ -10,18 +10,22 @@ async function bootstrap() {
         // Get configuration from ConfigService
         const configService = app.get(ConfigService);
         const port = configService.get<number>('PORT') || 5000;
-        const allowedOrigins = configService.get<string>('CORS_ORIGINS')?.split(',') || [
+        const allowedOrigins = configService
+                .get<string>('CORS_ORIGINS')
+                ?.split(',')
+                .map((origin) => origin.trim().replace(/\/$/, '')) || [
                 'http://localhost:9000',
-                'https://mintoinvitions.netlify.app/',
+                'https://mintoinvitions.netlify.app',
         ];
 
         // Configure CORS
         app.enableCors({
                 origin: (origin, callback) => {
-                        if (!origin || allowedOrigins.includes(origin)) {
+                        const normalizedOrigin = origin?.replace(/\/$/, ''); // Bỏ dấu gạch chéo ở cuối từ nguồn gốc yêu cầu
+                        if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
                                 callback(null, true);
                         } else {
-                                callback(new Error('Not allowed by CORS'));
+                                callback(new Error('Không được phép bởi CORS'));
                         }
                 },
                 credentials: true,
