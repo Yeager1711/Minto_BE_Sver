@@ -26,7 +26,8 @@ export class PayOSService {
                 this.payos = new PayOS(
                         process.env.PAYOS_CLIENT_ID,
                         process.env.PAYOS_API_KEY,
-                        process.env.PAYOS_CHECKSUM_KEY
+                        process.env.PAYOS_CHECKSUM_KEY,
+                        process.env.NEXT_PUBLIC_PAYOS_RETURN_URL
                 );
         }
 
@@ -97,11 +98,12 @@ export class PayOSService {
                                 amount: totalAmount,
                                 description,
                                 returnUrl:
-                                        process.env.PAYOS_RETURN_URL ||
-                                        `http://localhost:9000/URLreturn/success/${templateId}`,
+                                        process.env.NEXT_PUBLIC_PAYOS_RETURN_URL +
+                                        '/URLreturn/success/' +
+                                        templateId,
                                 cancelUrl:
-                                        process.env.PAYOS_CANCEL_URL ||
-                                        'http://localhost:9000/URLreturn/cancel',
+                                        process.env.NEXT_PUBLIC_PAYOS_RETURN_URL +
+                                        '/URLreturn/cancel',
                                 buyerEmail: user.email,
                                 buyerName: user.full_name,
                                 buyerPhone: user.phone || '',
