@@ -141,9 +141,10 @@
 // }
 
 // ============================   MYSQL 123HOST DUMP==================================================
+
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -180,34 +181,42 @@ import { ImageKitController } from './imagekit/imagekit.controller';
                         isGlobal: true,
                         envFilePath: '.env',
                 }),
-                TypeOrmModule.forRoot({
-                        type: 'mysql',
-                        host: '103.97.126.29',
-                        port: 3306,
-                        username: 'arrtvfbr_minto',
-                        password: '98QWAGn2pWu5zfU4tNpw',
-                        database: 'arrtvfbr_minto',
-                        entities: [
-                                Users,
-                                Role,
-                                Category,
-                                Templates,
-                                Thumbnails,
-                                Cards,
-                                Invitations,
-                                Guests,
-                                Payments,
-                        ],
-                        synchronize: true,
-                        extra: {
-                                charset: 'utf8mb4',
-                                collation: 'utf8mb4_unicode_ci',
-                        },
+                TypeOrmModule.forRootAsync({
+                        imports: [ConfigModule],
+                        useFactory: (configService: ConfigService) => ({
+                                type: 'mysql',
+                                host: configService.get<string>('DB_HOST'),
+                                port: configService.get<number>('DB_PORT'),
+                                username: configService.get<string>('DB_USER'),
+                                password: configService.get<string>('DB_PASSWORD'),
+                                database: configService.get<string>('DB_NAME'),
+                                entities: [
+                                        Users,
+                                        Role,
+                                        Category,
+                                        Templates,
+                                        Thumbnails,
+                                        Cards,
+                                        Invitations,
+                                        Guests,
+                                        Payments,
+                                ],
+                                synchronize: false,
+                                extra: {
+                                        charset: 'utf8mb4',
+                                        collation: 'utf8mb4_unicode_ci',
+                                },
+                        }),
+                        inject: [ConfigService],
                 }),
-                JwtModule.register({
-                        global: true,
-                        secret: 'MintoInvitiOnsJWTSECRET_KEYVALUES',
-                        signOptions: { expiresIn: '1d' },
+                JwtModule.registerAsync({
+                        imports: [ConfigModule],
+                        useFactory: (configService: ConfigService) => ({
+                                global: true,
+                                secret: configService.get<string>('JWT_SECRET'),
+                                signOptions: { expiresIn: '1d' },
+                        }),
+                        inject: [ConfigService],
                 }),
                 MulterModule.register({
                         storage: memoryStorage(),
@@ -270,14 +279,13 @@ export class AppModule implements NestModule {
 
 if (process.env.NODE_ENV !== 'production') {
         console.log('DB Config:', {
-                host: 'localhost',
-                port: 3306,
-                username: 'arrtvfbr_minto',
-                database: 'arrtvfbr_minto',
+                host: process.env.DB_HOST || 'localhost',
+                port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+                username: process.env.DB_USER || 'arrtvfbr_minto',
+                database: process.env.DB_NAME || 'arrtvfbr_minto',
         });
-        console.log('JWT_SECRET:', 'MintoInvitiOnsJWTSECRET_KEYVALUES');
+        console.log('JWT_SECRET:', process.env.JWT_SECRET || 'MintoInvitiOnsJWTSECRET_KEYVALUES');
 }
-
 
 // MYSQL LARAGON
 // import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
