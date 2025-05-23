@@ -26,8 +26,7 @@ export class PayOSService {
                 this.payos = new PayOS(
                         process.env.PAYOS_CLIENT_ID,
                         process.env.PAYOS_API_KEY,
-                        process.env.PAYOS_CHECKSUM_KEY,
-                        process.env.NEXT_PUBLIC_PAYOS_RETURN_URL
+                        process.env.PAYOS_CHECKSUM_KEY
                 );
         }
 
@@ -98,12 +97,11 @@ export class PayOSService {
                                 amount: totalAmount,
                                 description,
                                 returnUrl:
-                                        process.env.NEXT_PUBLIC_PAYOS_RETURN_URL +
-                                        '/URLreturn/success/' +
-                                        templateId,
+                                        process.env.PAYOS_RETURN_URL ||
+                                        `https://mintoinvitions.netlify.app/URLreturn/success/${templateId}`,
                                 cancelUrl:
-                                        process.env.NEXT_PUBLIC_PAYOS_RETURN_URL +
-                                        '/URLreturn/cancel',
+                                        process.env.PAYOS_CANCEL_URL ||
+                                        'https://mintoinvitions.netlify.app',
                                 buyerEmail: user.email,
                                 buyerName: user.full_name,
                                 buyerPhone: user.phone || '',
