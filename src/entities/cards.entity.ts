@@ -4,11 +4,6 @@ import { Templates } from './templates.entity';
 import { Invitations } from './invitations.entity';
 import { Payments } from './payments.entity';
 
-export enum CardStatus {
-        DRAFT = 'draft',
-        COMPLETED = 'completed',
-}
-
 @Entity('Cards')
 export class Cards {
         @Column({ type: 'int', primary: true })
@@ -26,8 +21,13 @@ export class Cards {
         @Column({ type: 'json', nullable: true })
         custom_data: any;
 
-        @Column({ type: 'enum', enum: CardStatus })
-        status: CardStatus;
+        @Column({
+                type: 'varchar',
+                length: 50,
+                default: 'DRAFT',
+                comment: 'Trạng thái thiệp',
+        })
+        status: string;
 
         @ManyToOne(() => Users, (user) => user.cards)
         @JoinColumn({ name: 'user_id' })

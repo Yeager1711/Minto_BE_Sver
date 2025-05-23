@@ -5,16 +5,15 @@ import {
         NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, QueryFailedError, FindOptionsWhere } from 'typeorm';
-import { Cards, CardStatus } from '../../entities/cards.entity';
+import { Repository, FindOptionsWhere, IsNull } from 'typeorm';
+import { Cards } from '../../entities/cards.entity';
 import { Invitations } from '../../entities/invitations.entity';
 import { Guests } from '../../entities/guests.entity';
 import { Thumbnails } from '../../entities/thumbnails.entity';
 import { Templates } from '../../entities/templates.entity';
-import { SharedLinks } from '../../entities/shared-links.entity';
-import { Payments, PaymentMethod, PaymentStatus } from '../../entities/payments.entity';
-import logger from '../../common/logger';
+import { Payments } from '../../entities/payments.entity';
 import { Users } from '../../entities/users.entity';
+import logger from '../../common/logger';
 
 @Injectable()
 export class CardService {
@@ -31,8 +30,6 @@ export class CardService {
                 private thumbnailsRepository: Repository<Thumbnails>,
                 @InjectRepository(Templates)
                 private templatesRepository: Repository<Templates>,
-                @InjectRepository(SharedLinks)
-                private sharedLinksRepository: Repository<SharedLinks>,
                 @InjectRepository(Payments)
                 private paymentsRepository: Repository<Payments>,
                 @InjectRepository(Users)
@@ -73,37 +70,20 @@ export class CardService {
         async saveCard(userId: number, data: any): Promise<any> {
                 this.logger.info(`Processing data for user ${userId}`, { data });
 
-                const { templateId, weddingData, inviteeNames, weddingImages, totalPrice } = data;
+                const { orderCode, weddingData, weddingImages } = data;
 
-                if (!templateId || !weddingData || !inviteeNames || totalPrice === undefined) {
-                        const error = new BadRequestException(
-                                'Thiếu templateId, weddingData, inviteeNames hoặc totalPrice'
-                        );
+                if (!orderCode || !weddingData) {
+                        const error = new BadRequestException('Thiếu orderCode hoặc weddingData');
                         this.logger.error('Input validation failed', {
                                 error: error.message,
                                 stack: error.stack,
                                 userId,
-                                data: { templateId, weddingData, inviteeNames, totalPrice },
+                                data,
                         });
                         throw error;
                 }
 
-                const template = await this.templatesRepository.findOne({
-                        where: { template_id: templateId },
-                });
-                if (!template) {
-                        const error = new NotFoundException(
-                                `Template với ID ${templateId} không tồn tại`
-                        );
-                        this.logger.error('Template not found', {
-                                error: error.message,
-                                stack: error.stack,
-                                userId,
-                                templateId,
-                        });
-                        throw error;
-                }
-
+                // Kiểm tra user
                 const user = await this.usersRepository.findOne({ where: { user_id: userId } });
                 if (!user) {
                         const error = new NotFoundException(`User với ID ${userId} không tồn tại`);
@@ -115,6 +95,32 @@ export class CardService {
                         throw error;
                 }
 
+                // Kiểm tra payment dựa trên orderCode (transaction_id) và user_id
+                const payment = await this.paymentsRepository.findOne({
+                        where: {
+                                transaction_id: orderCode,
+                                user: { user_id: userId },
+                                status: 'COMPLETED',
+                        },
+                        relations: ['card', 'card.template'],
+                });
+                if (!payment || !payment.card) {
+                        const error = new BadRequestException(
+                                'Thanh toán không hợp lệ hoặc không tồn tại card liên quan'
+                        );
+                        this.logger.error('Payment or card not found', {
+                                error: error.message,
+                                stack: error.stack,
+                                userId,
+                                orderCode,
+                        });
+                        throw error;
+                }
+
+                const card = payment.card;
+                const template = card.template;
+
+                // Kiểm tra dữ liệu weddingData
                 if (
                         !weddingData.groom ||
                         !weddingData.bride ||
@@ -138,36 +144,29 @@ export class CardService {
                 return await this.cardsRepository.manager.transaction(
                         async (transactionalEntityManager) => {
                                 try {
-                                        const cardId = await this.getUniqueRandomId(
-                                                this.cardsRepository,
-                                                Cards,
-                                                'card_id'
-                                        );
-
-                                        const card = new Cards();
-                                        card.card_id = cardId;
-                                        card.user_id = userId;
-                                        card.template_id = templateId;
-                                        card.created_at = new Date();
-                                        card.status = CardStatus.DRAFT;
+                                        // Cập nhật Cards với weddingData và weddingImages
                                         card.custom_data = { weddingData, weddingImages };
-                                        const savedCard = await transactionalEntityManager.save(
+                                        card.status = 'COMPLETED';
+                                        const updatedCard = await transactionalEntityManager.save(
                                                 Cards,
                                                 card
                                         );
-                                        this.logger.info(`Tạo card với ID ${savedCard.card_id}`, {
-                                                cardId: savedCard.card_id,
-                                        });
+                                        this.logger.info(
+                                                `Cập nhật card với ID ${updatedCard.card_id}`,
+                                                {
+                                                        cardId: updatedCard.card_id,
+                                                }
+                                        );
 
+                                        // Tạo Invitations với dữ liệu từ weddingData
                                         const invitationId = await this.getUniqueRandomId(
                                                 this.invitationsRepository,
                                                 Invitations,
                                                 'invitation_id'
                                         );
-
                                         const invitation = new Invitations();
                                         invitation.invitation_id = invitationId;
-                                        invitation.card = savedCard;
+                                        invitation.card = updatedCard;
                                         invitation.groom_name = weddingData.groom;
                                         invitation.bride_name = weddingData.bride;
                                         invitation.wedding_date = new Date(
@@ -182,7 +181,9 @@ export class CardService {
                                         invitation.story_groom = weddingData.groomStory || '';
                                         invitation.story_bride = weddingData.brideStory || '';
                                         invitation.custom_image =
-                                                weddingImages?.mainImage?.url || '';
+                                                weddingImages.find(
+                                                        (img: any) => img.position === 'mainImage'
+                                                )?.url || '';
                                         const savedInvitation =
                                                 await transactionalEntityManager.save(
                                                         Invitations,
@@ -192,112 +193,65 @@ export class CardService {
                                                 `Tạo invitation với ID ${savedInvitation.invitation_id}`,
                                                 {
                                                         invitationId: savedInvitation.invitation_id,
+                                                        cardId: updatedCard.card_id,
                                                 }
                                         );
 
-                                        let sharedLinks: { guest_id: number; share_url: string }[] =
-                                                [];
-                                        if (
-                                                inviteeNames &&
-                                                Array.isArray(inviteeNames) &&
-                                                inviteeNames.length > 0
-                                        ) {
-                                                const guests = await Promise.all(
-                                                        inviteeNames.map(async (name: string) => {
-                                                                if (!name.trim()) {
-                                                                        const error =
-                                                                                new BadRequestException(
-                                                                                        'Tên khách mời không được để trống'
-                                                                                );
-                                                                        this.logger.error(
-                                                                                'Guest name validation failed',
-                                                                                {
-                                                                                        error: error.message,
-                                                                                        stack: error.stack,
-                                                                                        userId,
-                                                                                        guestName: name,
-                                                                                }
-                                                                        );
-                                                                        throw error;
-                                                                }
-                                                                const guestId =
-                                                                        await this.getUniqueRandomId(
-                                                                                this
-                                                                                        .guestsRepository,
-                                                                                Guests,
-                                                                                'guest_id'
-                                                                        );
-                                                                const guest = new Guests();
-                                                                guest.guest_id = guestId;
+                                        // Tìm và cập nhật invitation_id và card_id cho các bản ghi Guests
+                                        const existingGuests = await this.guestsRepository.find({
+                                                where: {
+                                                        invitation_id: IsNull(), // Sử dụng IsNull cho trường hợp NULL
+                                                },
+                                        });
+                                        this.logger.info(
+                                                `Tìm thấy ${existingGuests.length} khách mời với invitation_id = NULL`,
+                                                {
+                                                        guestCount: existingGuests.length,
+                                                }
+                                        );
+
+                                        if (existingGuests.length > 0) {
+                                                await Promise.all(
+                                                        existingGuests.map(async (guest) => {
                                                                 guest.invitation_id =
                                                                         savedInvitation.invitation_id;
-                                                                guest.full_name = name;
-                                                                return guest;
-                                                        })
-                                                );
-                                                const savedGuests =
-                                                        await transactionalEntityManager.save(
-                                                                Guests,
-                                                                guests
-                                                        );
-                                                this.logger.info(
-                                                        `Lưu ${guests.length} khách mời cho invitation ${savedInvitation.invitation_id}`,
-                                                        {
-                                                                guestCount: guests.length,
-                                                                invitationId:
-                                                                        savedInvitation.invitation_id,
-                                                        }
-                                                );
-
-                                                sharedLinks = await Promise.all(
-                                                        savedGuests.map(async (guest) => {
-                                                                const linkId =
-                                                                        await this.getUniqueRandomId(
-                                                                                this
-                                                                                        .sharedLinksRepository,
-                                                                                SharedLinks,
-                                                                                'link_id'
-                                                                        );
-                                                                const sharedLink =
-                                                                        new SharedLinks();
-                                                                sharedLink.link_id = linkId;
-                                                                sharedLink.guest_id =
-                                                                        guest.guest_id;
-                                                                sharedLink.share_url = `/template/${templateId}/${encodeURIComponent(guest.full_name)}`;
-                                                                sharedLink.created_at = new Date();
-                                                                sharedLink.expires_at = new Date(
-                                                                        Date.now() +
-                                                                                30 *
-                                                                                        24 *
-                                                                                        60 *
-                                                                                        60 *
-                                                                                        1000
-                                                                );
+                                                                guest.card_id = updatedCard.card_id; // Gán card_id cho khách mời
                                                                 await transactionalEntityManager.save(
-                                                                        SharedLinks,
-                                                                        sharedLink
+                                                                        Guests,
+                                                                        guest
                                                                 );
-                                                                return {
-                                                                        guest_id: guest.guest_id,
-                                                                        share_url: sharedLink.share_url,
-                                                                };
+                                                                this.logger.info(
+                                                                        `Cập nhật guest với ID ${guest.guest_id} cho invitation ${savedInvitation.invitation_id} và card ${updatedCard.card_id}`,
+                                                                        {
+                                                                                guestId: guest.guest_id,
+                                                                                invitationId:
+                                                                                        savedInvitation.invitation_id,
+                                                                                cardId: updatedCard.card_id,
+                                                                        }
+                                                                );
                                                         })
                                                 );
-                                                this.logger.info(
-                                                        `Tạo ${sharedLinks.length} SharedLinks cho các khách mời`,
+                                        } else {
+                                                this.logger.warn(
+                                                        `Không tìm thấy khách mời nào với invitation_id = NULL để cập nhật`,
                                                         {
-                                                                sharedLinkCount: sharedLinks.length,
+                                                                cardId: updatedCard.card_id,
+                                                                orderCode,
                                                         }
                                                 );
                                         }
 
-                                        if (weddingImages && typeof weddingImages === 'object') {
+                                        // Tạo Thumbnails và lưu card_id
+                                        if (
+                                                Array.isArray(weddingImages) &&
+                                                weddingImages.length > 0
+                                        ) {
                                                 const thumbnails = await Promise.all(
-                                                        Object.entries(weddingImages).map(
-                                                                async ([key, image]: [
-                                                                        string,
-                                                                        any,
-                                                                ]) => {
+                                                        weddingImages.map(
+                                                                async (
+                                                                        image: any,
+                                                                        index: number
+                                                                ) => {
                                                                         const thumbnailId =
                                                                                 await this.getUniqueRandomId(
                                                                                         this
@@ -315,8 +269,10 @@ export class CardService {
                                                                                 image.url || '';
                                                                         thumbnail.position =
                                                                                 image.position ||
-                                                                                key;
-                                                                        thumbnail.description = `Ảnh cho ${key}`;
+                                                                                `image_${index}`;
+                                                                        thumbnail.description = `Ảnh cho vị trí ${image.position || index}`;
+                                                                        thumbnail.card_id =
+                                                                                updatedCard.card_id;
                                                                         return thumbnail;
                                                                 }
                                                         )
@@ -326,92 +282,36 @@ export class CardService {
                                                         thumbnails
                                                 );
                                                 this.logger.info(
-                                                        `Lưu ${thumbnails.length} thumbnails cho template ${templateId}`,
+                                                        `Lưu ${thumbnails.length} thumbnails cho template ${template.template_id} và card ${updatedCard.card_id}`,
                                                         {
                                                                 thumbnailCount: thumbnails.length,
-                                                                templateId,
-                                                        }
-                                                );
-                                        }
-
-                                        const paymentId = await this.getUniqueRandomId(
-                                                this.paymentsRepository,
-                                                Payments,
-                                                'payment_id'
-                                        );
-                                        const payment = new Payments();
-                                        payment.payment_id = paymentId;
-                                        payment.card = savedCard;
-                                        payment.user = user;
-                                        payment.amount = totalPrice;
-                                        payment.payment_date = new Date();
-                                        payment.payment_method = PaymentMethod.ONLINE;
-                                        payment.status = PaymentStatus.COMPLETED;
-                                        payment.transaction_id = paymentId.toString();
-                                        await transactionalEntityManager.save(Payments, payment);
-                                        this.logger.info(`Tạo payment với ID ${paymentId}`, {
-                                                paymentId,
-                                                amount: totalPrice,
-                                                userId,
-                                                cardId: savedCard.card_id,
-                                        });
-
-                                        if (inviteeNames && inviteeNames.length > 0) {
-                                                savedCard.status = CardStatus.COMPLETED;
-                                                await transactionalEntityManager.save(
-                                                        Cards,
-                                                        savedCard
-                                                );
-                                                this.logger.info(
-                                                        `Cập nhật card ${savedCard.card_id} sang trạng thái COMPLETED`,
-                                                        {
-                                                                cardId: savedCard.card_id,
-                                                                status: CardStatus.COMPLETED,
+                                                                templateId: template.template_id,
+                                                                cardId: updatedCard.card_id,
                                                         }
                                                 );
                                         }
 
                                         return {
-                                                ...savedCard,
-                                                sharedLinks,
+                                                ...updatedCard,
+                                                invitation_id: savedInvitation.invitation_id,
                                         };
                                 } catch (error) {
-                                        if (error instanceof QueryFailedError) {
-                                                this.logger.error(
-                                                        'Database error occurred during transaction',
-                                                        {
-                                                                error: error.message,
-                                                                stack: error.stack,
-                                                                sql: error.query,
-                                                                parameters: error.parameters,
-                                                                driverError: error.driverError,
-                                                                userId,
-                                                                templateId,
-                                                                data,
-                                                        }
-                                                );
-                                                throw new BadRequestException(
-                                                        'Lỗi khi lưu dữ liệu, có thể do xung đột khóa chính'
-                                                );
-                                        } else {
-                                                this.logger.error(
-                                                        'Unexpected error occurred during transaction',
-                                                        {
-                                                                error: error.message,
-                                                                stack: error.stack,
-                                                                userId,
-                                                                templateId,
-                                                                data,
-                                                        }
-                                                );
-                                                throw error;
-                                        }
+                                        this.logger.error(
+                                                'Unexpected error occurred during transaction',
+                                                {
+                                                        error: error.message,
+                                                        stack: error.stack,
+                                                        userId,
+                                                        orderCode,
+                                                        data,
+                                                }
+                                        );
+                                        throw new BadRequestException('Lỗi khi lưu dữ liệu');
                                 }
                         }
                 );
         }
 
-        // src/services/card.service.ts
         async getUserPaidTemplates(userId: number): Promise<any[]> {
                 this.logger.info(`Lấy danh sách template đã thanh toán cho user ${userId}`);
 
@@ -426,12 +326,11 @@ export class CardService {
                                 .leftJoinAndSelect('card.template', 'template')
                                 .leftJoinAndSelect('card.invitations', 'invitations')
                                 .leftJoinAndSelect('invitations.guests', 'guests')
-                                .leftJoinAndSelect('guests.sharedLinks', 'sharedLinks')
                                 .leftJoinAndSelect('card.payments', 'payments')
                                 .where('card.user_id = :userId', { userId })
-                                .andWhere('card.status = :status', { status: CardStatus.COMPLETED })
+                                .andWhere('card.status = :status', { status: 'COMPLETED' })
                                 .andWhere('payments.status = :paymentStatus', {
-                                        paymentStatus: PaymentStatus.COMPLETED,
+                                        paymentStatus: 'COMPLETED',
                                 })
                                 .select([
                                         'card.card_id',
@@ -443,11 +342,7 @@ export class CardService {
                                         'guests.guest_id',
                                         'guests.invitation_id',
                                         'guests.full_name',
-                                        'sharedLinks.link_id',
-                                        'sharedLinks.guest_id',
-                                        'sharedLinks.share_url',
-                                        'sharedLinks.created_at',
-                                        'sharedLinks.expires_at',
+                                        'guests.card_id', // Thêm guests.card_id vào select
                                         'payments.amount',
                                         'payments.payment_date',
                                         'payments.status',
@@ -462,9 +357,13 @@ export class CardService {
                                 return [];
                         }
 
-                        const result = cards.map((card) => ({
-                                card_id: card.card_id,
-                                template: {
+                        // Nhóm dữ liệu theo card_id
+                        const result = cards.reduce((acc: any[], card) => {
+                                const existingCard = acc.find(
+                                        (item) => item.card_id === card.card_id
+                                );
+
+                                const templateData = {
                                         template_id: card.template.template_id,
                                         name: card.template.name,
                                         image_url: card.template.image_url,
@@ -483,20 +382,22 @@ export class CardService {
                                                                         invitation_id:
                                                                                 guest.invitation_id,
                                                                         full_name: guest.full_name,
-                                                                        sharedLinks:
-                                                                                guest.sharedLinks?.map(
-                                                                                        (link) => ({
-                                                                                                link_id: link.link_id,
-                                                                                                guest_id: link.guest_id,
-                                                                                                share_url: link.share_url,
-                                                                                                created_at: link.created_at,
-                                                                                                expires_at: link.expires_at,
-                                                                                        })
-                                                                                ) || [],
+                                                                        card_id: guest.card_id, // Thêm card_id vào dữ liệu trả về
                                                                 })) || []
                                                 ) || [],
-                                },
-                        }));
+                                };
+
+                                if (existingCard) {
+                                        // Nếu card_id đã tồn tại, không cần merge vì mỗi card_id chỉ có một template
+                                } else {
+                                        acc.push({
+                                                card_id: card.card_id,
+                                                template: templateData,
+                                        });
+                                }
+
+                                return acc;
+                        }, []);
 
                         this.logger.info(
                                 `Tìm thấy ${cards.length} template đã thanh toán cho user ${userId}`
@@ -516,10 +417,11 @@ export class CardService {
         async getGuestAndCardByGuestIdAndInvitationId(
                 template_id: number,
                 guest_id: number,
-                invitation_id: number
+                invitation_id: number,
+                card_id: number
         ): Promise<any> {
                 this.logger.info(
-                        `Lấy thông tin khách mời và thiệp cưới cho template_id ${template_id}, guest_id ${guest_id}, và invitation_id ${invitation_id}`
+                        `Lấy thông tin khách mời và thiệp cưới cho template_id ${template_id}, guest_id ${guest_id}, invitation_id ${invitation_id}, card_id ${card_id}`
                 );
 
                 // Validate input parameters
@@ -529,27 +431,62 @@ export class CardService {
                         !Number.isInteger(guest_id) ||
                         guest_id <= 0 ||
                         !Number.isInteger(invitation_id) ||
-                        invitation_id <= 0
+                        invitation_id <= 0 ||
+                        !Number.isInteger(card_id) ||
+                        card_id <= 0
                 ) {
                         this.logger.error(
-                                `ID không hợp lệ: template_id ${template_id}, guest_id ${guest_id}, invitation_id ${invitation_id}`
+                                `ID không hợp lệ: template_id ${template_id}, guest_id ${guest_id}, invitation_id ${invitation_id}, card_id ${card_id}`
                         );
                         throw new NotFoundException(
-                                'ID mẫu thiệp, khách mời, hoặc lời mời không hợp lệ'
+                                'ID mẫu thiệp, khách mời, lời mời, hoặc card không hợp lệ'
                         );
                 }
 
                 try {
+                        // Kiểm tra trước xem guest có tồn tại không
+                        const guestExists = await this.guestsRepository.findOne({
+                                where: { guest_id },
+                        });
+                        if (!guestExists) {
+                                this.logger.warn(
+                                        `Khách mời với guest_id ${guest_id} không tồn tại`
+                                );
+                                throw new NotFoundException(
+                                        `Khách mời với ID ${guest_id} không tồn tại`
+                                );
+                        }
+
+                        // Kiểm tra xem invitation_id có thuộc card_id không bằng createQueryBuilder
+                        const invitationCheck = await this.invitationsRepository
+                                .createQueryBuilder('invitation')
+                                .leftJoinAndSelect('invitation.card', 'card')
+                                .where('invitation.invitation_id = :invitation_id', {
+                                        invitation_id,
+                                })
+                                .andWhere('card.card_id = :card_id', { card_id })
+                                .getOne();
+
+                        if (!invitationCheck) {
+                                this.logger.warn(
+                                        `Lời mời với invitation_id ${invitation_id} không thuộc card_id ${card_id}`
+                                );
+                                throw new NotFoundException(
+                                        `Lời mời với ID ${invitation_id} không thuộc card ${card_id}`
+                                );
+                        }
+
+                        // Truy vấn chính
                         const guest = await this.guestsRepository
                                 .createQueryBuilder('guest')
                                 .leftJoinAndSelect('guest.invitation', 'invitation')
                                 .leftJoinAndSelect('invitation.card', 'card')
                                 .leftJoinAndSelect('card.template', 'template')
                                 .leftJoinAndSelect('template.thumbnails', 'thumbnails')
-                                .leftJoinAndSelect('guest.sharedLinks', 'sharedLinks')
                                 .where('guest.guest_id = :guest_id', { guest_id })
                                 .andWhere('guest.invitation_id = :invitation_id', { invitation_id })
                                 .andWhere('card.template_id = :template_id', { template_id })
+                                .andWhere('card.card_id = :card_id', { card_id })
                                 .select([
                                         'guest.guest_id',
                                         'guest.invitation_id',
@@ -578,20 +515,16 @@ export class CardService {
                                         'thumbnails.image_url',
                                         'thumbnails.position',
                                         'thumbnails.description',
-                                        'sharedLinks.link_id',
-                                        'sharedLinks.guest_id',
-                                        'sharedLinks.share_url',
-                                        'sharedLinks.created_at',
-                                        'sharedLinks.expires_at',
+                                        'thumbnails.card_id',
                                 ])
                                 .getOne();
 
                         if (!guest) {
                                 this.logger.warn(
-                                        `Không tìm thấy khách mời với guest_id ${guest_id}, invitation_id ${invitation_id}, và template_id ${template_id}`
+                                        `Không tìm thấy khách mời với guest_id ${guest_id}, invitation_id ${invitation_id}, template_id ${template_id}, card_id ${card_id}`
                                 );
                                 throw new NotFoundException(
-                                        `Khách mời với ID ${guest_id} không tồn tại, không thuộc lời mời ${invitation_id}, hoặc không thuộc mẫu thiệp ${template_id}`
+                                        `Khách mời với ID ${guest_id} không tồn tại, không thuộc lời mời ${invitation_id}, mẫu thiệp ${template_id}, hoặc card ${card_id}`
                                 );
                         }
 
@@ -609,13 +542,6 @@ export class CardService {
                                         guest_id: guest.guest_id,
                                         invitation_id: guest.invitation_id,
                                         full_name: guest.full_name,
-                                        sharedLinks: guest.sharedLinks.map((link) => ({
-                                                link_id: link.link_id,
-                                                guest_id: link.guest_id,
-                                                share_url: link.share_url,
-                                                created_at: link.created_at,
-                                                expires_at: link.expires_at,
-                                        })),
                                 },
                                 card: {
                                         card_id: guest.invitation.card.card_id,
@@ -632,14 +558,17 @@ export class CardService {
                                                 price: guest.invitation.card.template.price,
                                                 status: guest.invitation.card.template.status,
                                         },
-                                        thumbnails: guest.invitation.card.template.thumbnails.map(
-                                                (thumbnail) => ({
+                                        thumbnails: guest.invitation.card.template.thumbnails
+                                                .filter(
+                                                        (thumbnail) => thumbnail.card_id === card_id
+                                                )
+                                                .map((thumbnail) => ({
                                                         thumbnail_id: thumbnail.thumbnail_id,
                                                         image_url: thumbnail.image_url,
                                                         position: thumbnail.position,
                                                         description: thumbnail.description,
-                                                })
-                                        ),
+                                                        card_id: thumbnail.card_id,
+                                                })),
                                         invitations: [
                                                 {
                                                         invitation_id:
@@ -659,7 +588,7 @@ export class CardService {
                         };
 
                         this.logger.info(
-                                `Lấy thông tin thành công cho guest_id ${guest_id}, invitation_id ${invitation_id}, và template_id ${template_id}`
+                                `Lấy thông tin thành công cho guest_id ${guest_id}, invitation_id ${invitation_id}, template_id ${template_id}, card_id ${card_id}`
                         );
                         return result;
                 } catch (error) {
@@ -668,6 +597,7 @@ export class CardService {
                                 template_id,
                                 guest_id,
                                 invitation_id,
+                                card_id,
                         });
                         throw error instanceof NotFoundException
                                 ? error

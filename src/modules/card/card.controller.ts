@@ -1,46 +1,37 @@
 import {
         Controller,
         Post,
-        Req,
+        Get,
+        Request,
+        Param,
         Body,
-        UploadedFiles,
-        UseInterceptors,
         UnauthorizedException,
         BadRequestException,
-        Logger,
-        Get,
         InternalServerErrorException,
         ParseIntPipe,
-        Param,
+        Logger,
+        NotFoundException,
 } from '@nestjs/common';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { CardService } from './card.service';
 
 interface AuthenticatedRequest extends Request {
         user?: { user_id: number; email?: string };
 }
 
+// Cập nhật interface SaveCardBody để chấp nhận weddingImages là object hoặc mảng
 interface SaveCardBody {
-        templateId: string | number;
+        orderCode: string;
         weddingData: string | object;
-        inviteeNames: string | string[];
-        positions?: string | string[];
-        totalPrice: string | number; // Thêm totalPrice
-}
-
-interface WeddingImage {
-        position: string;
-        url: string;
+        weddingImages:
+                | { [key: string]: { position: string; url: string; fileName?: string } }
+                | string
+                | { position: string; url: string }[];
 }
 
 interface ParsedSaveCardData {
-        templateId: number;
+        orderCode: string;
         weddingData: object;
-        inviteeNames: string[];
-        weddingImages: WeddingImage[];
-        totalPrice: number; // Thêm totalPrice
+        weddingImages: { position: string; url: string }[];
 }
 
 @Controller('cards')
@@ -50,40 +41,9 @@ export class CardController {
         constructor(private readonly cardService: CardService) {}
 
         @Post('save-card')
-        @UseInterceptors(
-                FileFieldsInterceptor([{ name: 'weddingImages', maxCount: 20 }], {
-                        storage: diskStorage({
-                                destination: './uploads/wedding-images',
-                                filename: (req, file, cb) => {
-                                        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-                                        cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-                                },
-                        }),
-                        fileFilter: (req, file, cb) => {
-                                const allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
-                                if (!allowedMimes.includes(file.mimetype)) {
-                                        cb(
-                                                new BadRequestException(
-                                                        'Chỉ hỗ trợ định dạng ảnh JPEG, PNG, hoặc GIF'
-                                                ),
-                                                false
-                                        );
-                                }
-                                cb(null, true);
-                        },
-                        limits: {
-                                fileSize: 5 * 1024 * 1024,
-                        },
-                })
-        )
-        async saveCard(
-                @Req() req: AuthenticatedRequest,
-                @Body() body: SaveCardBody,
-                @UploadedFiles() files: { weddingImages?: Express.Multer.File[] }
-        ) {
+        async saveCard(@Request() req: AuthenticatedRequest, @Body() body: SaveCardBody) {
                 this.logger.log('Nhận yêu cầu lưu thiệp');
                 this.logger.debug(`Body: ${JSON.stringify(body, null, 2)}`);
-                this.logger.debug(`Files: ${JSON.stringify(files, null, 2)}`);
 
                 const userId = req.user?.user_id;
                 if (!userId) {
@@ -94,7 +54,7 @@ export class CardController {
                 }
 
                 try {
-                        const parsedData = this.parseRequestData(body, files);
+                        const parsedData = this.parseRequestData(body);
                         this.logger.debug(
                                 `Dữ liệu đã phân tích: ${JSON.stringify(parsedData, null, 2)}`
                         );
@@ -113,92 +73,77 @@ export class CardController {
                 }
         }
 
-        private parseRequestData(
-                body: SaveCardBody,
-                files: { weddingImages?: Express.Multer.File[] }
-        ): ParsedSaveCardData {
-                const templateId =
-                        typeof body.templateId === 'string'
-                                ? parseInt(body.templateId, 10)
-                                : body.templateId;
-                if (isNaN(templateId) || templateId <= 0) {
-                        this.logger.error('templateId không hợp lệ');
-                        throw new BadRequestException('templateId không hợp lệ');
+        private parseRequestData(body: SaveCardBody): ParsedSaveCardData {
+                const { orderCode, weddingData, weddingImages } = body;
+
+                if (!orderCode) {
+                        this.logger.error('orderCode không hợp lệ');
+                        throw new BadRequestException('orderCode không hợp lệ');
                 }
 
-                let weddingData: object;
+                let parsedWeddingData: object;
                 try {
-                        weddingData =
-                                typeof body.weddingData === 'string'
-                                        ? JSON.parse(body.weddingData)
-                                        : body.weddingData;
+                        parsedWeddingData =
+                                typeof weddingData === 'string'
+                                        ? JSON.parse(weddingData)
+                                        : weddingData;
                 } catch (error) {
                         this.logger.error(`Lỗi phân tích weddingData: ${error.message}`);
                         throw new BadRequestException('Định dạng weddingData không hợp lệ');
                 }
 
-                if (!weddingData['groom'] || !weddingData['bride'] || !weddingData['weddingDate']) {
+                if (
+                        !parsedWeddingData['groom'] ||
+                        !parsedWeddingData['bride'] ||
+                        !parsedWeddingData['weddingDate'] ||
+                        !parsedWeddingData['groomAddress'] ||
+                        !parsedWeddingData['brideAddress'] ||
+                        !parsedWeddingData['lunarDay']
+                ) {
                         this.logger.error('Thiếu các trường bắt buộc trong weddingData');
                         throw new BadRequestException(
-                                'Thiếu thông tin chú rể, cô dâu hoặc ngày cưới trong weddingData'
+                                'Thiếu thông tin chú rể, cô dâu, ngày cưới, địa điểm chú rể, địa điểm cô dâu hoặc ngày âm lịch trong weddingData'
                         );
                 }
 
-                let inviteeNames: string[];
+                let parsedWeddingImages: { position: string; url: string }[];
                 try {
-                        inviteeNames =
-                                typeof body.inviteeNames === 'string'
-                                        ? JSON.parse(body.inviteeNames)
-                                        : body.inviteeNames;
+                        if (typeof weddingImages === 'string') {
+                                parsedWeddingImages = JSON.parse(weddingImages);
+                        } else if (Array.isArray(weddingImages)) {
+                                parsedWeddingImages = weddingImages;
+                        } else if (weddingImages && typeof weddingImages === 'object') {
+                                // Chuyển đổi object weddingImages thành mảng
+                                parsedWeddingImages = Object.values(weddingImages).map(
+                                        (img: any) => ({
+                                                position: img.position,
+                                                url: img.url,
+                                        })
+                                );
+                        } else {
+                                parsedWeddingImages = [];
+                        }
+
                         if (
-                                !Array.isArray(inviteeNames) ||
-                                inviteeNames.some((name) => !name.trim())
+                                !Array.isArray(parsedWeddingImages) ||
+                                parsedWeddingImages.some((img) => !img.position || !img.url)
                         ) {
-                                throw new Error('Định dạng inviteeNames không hợp lệ');
+                                throw new Error('Định dạng weddingImages không hợp lệ');
                         }
                 } catch (error) {
-                        this.logger.error(`Lỗi phân tích inviteeNames: ${error.message}`);
-                        throw new BadRequestException('Định dạng inviteeNames không hợp lệ');
-                }
-
-                const positions = Array.isArray(body.positions)
-                        ? body.positions
-                        : body.positions
-                          ? [body.positions]
-                          : [];
-                const weddingImages: WeddingImage[] = (files.weddingImages || []).map(
-                        (file, index) => ({
-                                position: positions[index] || `image_${index}`,
-                                url: `/uploads/wedding-images/${file.filename}`,
-                        })
-                );
-
-                if (files.weddingImages && files.weddingImages.length !== positions.length) {
-                        this.logger.warn('Số lượng file ảnh và vị trí không khớp');
-                        throw new BadRequestException('Số lượng file ảnh và vị trí không khớp');
-                }
-
-                const totalPrice =
-                        typeof body.totalPrice === 'string'
-                                ? parseFloat(body.totalPrice)
-                                : body.totalPrice;
-                if (isNaN(totalPrice) || totalPrice <= 0) {
-                        this.logger.error('totalPrice không hợp lệ');
-                        throw new BadRequestException('totalPrice không hợp lệ');
+                        this.logger.error(`Lỗi phân tích weddingImages: ${error.message}`);
+                        throw new BadRequestException('Định dạng weddingImages không hợp lệ');
                 }
 
                 return {
-                        templateId,
-                        weddingData,
-                        inviteeNames,
-                        weddingImages,
-                        totalPrice,
+                        orderCode,
+                        weddingData: parsedWeddingData,
+                        weddingImages: parsedWeddingImages,
                 };
         }
 
-        // src/controllers/card.controller.ts
         @Get('user-templates')
-        async getUserTemplates(@Req() req: AuthenticatedRequest) {
+        async getUserTemplates(@Request() req: AuthenticatedRequest) {
                 this.logger.log('Nhận yêu cầu lấy danh sách template đã sử dụng');
 
                 const userId = req.user?.user_id;
@@ -226,19 +171,23 @@ export class CardController {
                 }
         }
 
-        @Get('guest/:template_id/:guest_id/:invitation_id')
+        @Get(':template_id/:guest_id/:invitation_id/:card_id')
         async getGuestAndCardByGuestIdAndInvitationId(
                 @Param('template_id', ParseIntPipe) template_id: number,
                 @Param('guest_id', ParseIntPipe) guest_id: number,
-                @Param('invitation_id', ParseIntPipe) invitation_id: number
+                @Param('invitation_id', ParseIntPipe) invitation_id: number,
+                @Param('card_id', ParseIntPipe) card_id: number
         ) {
                 this.logger.log(
-                        `Nhận yêu cầu lấy thông tin khách mời và thiệp cưới với template_id ${template_id}, guest_id ${guest_id}, và invitation_id ${invitation_id}`
+                        `Nhận yêu cầu lấy thông tin khách mời và thiệp cưới với template_id ${template_id}, guest_id ${guest_id}, invitation_id ${invitation_id}, card_id ${card_id}`
                 );
+
+                // Loại bỏ kiểm tra userId vì đây là link share
                 return this.cardService.getGuestAndCardByGuestIdAndInvitationId(
                         template_id,
                         guest_id,
-                        invitation_id
+                        invitation_id,
+                        card_id
                 );
         }
 }

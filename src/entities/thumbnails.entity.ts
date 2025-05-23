@@ -6,7 +6,7 @@ export class Thumbnails {
         @Column({ type: 'int', primary: true })
         thumbnail_id: number;
 
-        @Column({ type: 'varchar', length: 255, nullable: false })
+        @Column({ type: 'longtext', nullable: false })
         image_url: string;
 
         @Column({ type: 'varchar', length: 50, nullable: true })
@@ -14,6 +14,13 @@ export class Thumbnails {
 
         @Column({ type: 'text', nullable: true })
         description: string;
+
+        @Column({
+                type: 'int',
+                nullable: true,
+                comment: 'ID của card liên quan (không phải relationship)',
+        })
+        card_id: number;
 
         @ManyToOne(() => Templates, (template) => template.thumbnails, {
                 nullable: false,

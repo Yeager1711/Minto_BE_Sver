@@ -9,7 +9,6 @@ import { Invitations } from '../../entities/invitations.entity';
 import { Guests } from '../../entities/guests.entity';
 import { Thumbnails } from '../../entities/thumbnails.entity';
 import { Templates } from '../../entities/templates.entity';
-import { SharedLinks } from '../../entities/shared-links.entity';
 import { Payments } from '../../entities/payments.entity';
 import { Users } from '../../entities/users.entity';
 
@@ -21,7 +20,6 @@ import { Users } from '../../entities/users.entity';
                         Guests,
                         Thumbnails,
                         Templates,
-                        SharedLinks,
                         Payments,
                         Users
                 ]),
