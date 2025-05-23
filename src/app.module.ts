@@ -204,7 +204,6 @@ import { ImageKitController } from './imagekit/imagekit.controller';
                                 synchronize: false,
                                 extra: {
                                         charset: 'utf8mb4',
-                                        collation: 'utf8mb4_unicode_ci',
                                 },
                         }),
                         inject: [ConfigService],

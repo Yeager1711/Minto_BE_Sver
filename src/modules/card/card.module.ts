@@ -11,6 +11,7 @@ import { Thumbnails } from '../../entities/thumbnails.entity';
 import { Templates } from '../../entities/templates.entity';
 import { Payments } from '../../entities/payments.entity';
 import { Users } from '../../entities/users.entity';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
         imports: [
@@ -21,11 +22,12 @@ import { Users } from '../../entities/users.entity';
                         Thumbnails,
                         Templates,
                         Payments,
-                        Users
+                        Users,
                 ]),
                 MulterModule.register({
                         dest: './uploads/wedding-images',
                 }),
+                JwtModule,
         ],
         controllers: [CardController],
         providers: [CardService],
