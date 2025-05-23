@@ -29,6 +29,7 @@ import { TemplateModule } from './modules/template/template.module';
 import { AuthModule } from './modules/auth/register/auth.module';
 import { AuthUserLoginModule } from './modules/auth/login/login_user.module';
 import { CardModule } from './modules/card/card.module';
+import { PayOSModule } from './modules/payment/payos.module';
 
 const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
 
@@ -99,6 +100,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                 CategoryModule,
                 TemplateModule,
                 CardModule,
+                PayOSModule, // Thêm PayOSModule
         ],
         controllers: [ImageKitController], // Thêm ImageKitController vào đây
 })
