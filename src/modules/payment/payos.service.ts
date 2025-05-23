@@ -96,12 +96,10 @@ export class PayOSService {
                                 orderCode: paymentId,
                                 amount: totalAmount,
                                 description,
-                                returnUrl:
-                                        process.env.PAYOS_RETURN_URL ||
-                                        `https://mintoinvitions.netlify.app/URLreturn/success/${templateId}`,
+                                returnUrl: `https://mintoinvitions.netlify.app/URLreturn/success/${templateId}`,
                                 cancelUrl:
                                         process.env.PAYOS_CANCEL_URL ||
-                                        'https://mintoinvitions.netlify.app',
+                                        'https://mintoinvitions.netlify.app/URLreturn/cancel',
                                 buyerEmail: user.email,
                                 buyerName: user.full_name,
                                 buyerPhone: user.phone || '',
