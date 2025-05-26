@@ -131,7 +131,8 @@ export class AppModule implements NestModule {
                                 { path: 'cards/save-card', method: RequestMethod.POST },
                                 { path: 'cards/user-templates', method: RequestMethod.GET },
                                 { path: 'payos/create-payment', method: RequestMethod.POST },
-                                { path: 'payos/status/:orderCode', method: RequestMethod.PATCH }
+                                { path: 'payos/status/:orderCode', method: RequestMethod.PATCH },
+                                { path: 'payos/statistics', method: RequestMethod.GET }
                         );
         }
 }
@@ -394,13 +395,16 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 { path: 'auth/register', method: RequestMethod.POST },
 //                                 { path: 'auth/login', method: RequestMethod.POST },
 //                                 { path: 'categories/getCategories', method: RequestMethod.GET },
-//                                 { path: 'templates/getTemplate/:template_id', method: RequestMethod.GET },
+//                                 {
+//                                         path: 'templates/getTemplate/:template_id',
+//                                         method: RequestMethod.GET,
+//                                 },
 //                                 {
 //                                         path: 'cards/guest/:template_id/:guest_id/:invitation_id',
 //                                         method: RequestMethod.GET,
 //                                 },
 //                                 {
-//                                         path: 'templates/getTemplate/template_id',
+//                                         path: 'templates/getTemplate',
 //                                         method: RequestMethod.GET,
 //                                 }
 //                         )
@@ -411,7 +415,8 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 { path: 'cards/save-card', method: RequestMethod.POST },
 //                                 { path: 'cards/user-templates', method: RequestMethod.GET },
 //                                 { path: 'payos/create-payment', method: RequestMethod.POST },
-//                                 { path: 'payos/status/:orderCode', method: RequestMethod.PATCH }
+//                                 { path: 'payos/status/:orderCode', method: RequestMethod.PATCH },
+//                                 { path: 'payos/statistics', method: RequestMethod.GET },
 //                         );
 //         }
 // }

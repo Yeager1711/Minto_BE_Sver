@@ -6,6 +6,7 @@ import { Users } from '../../entities/users.entity';
 import { Cards } from '../../entities/cards.entity';
 import { Guests } from '../../entities/guests.entity';
 import { UserService } from '../auth/user/user.service';
+import { Templates } from '../../entities/templates.entity';
 const PayOS = require('@payos/node');
 
 @Injectable()
@@ -21,7 +22,9 @@ export class PayOSService {
                 private readonly cardRepository: Repository<Cards>,
                 @InjectRepository(Guests)
                 private readonly guestsRepository: Repository<Guests>,
-                private readonly userService: UserService
+                private readonly userService: UserService,
+                @InjectRepository(Templates)
+                private readonly templatesRepository: Repository<Templates>
         ) {
                 this.payos = new PayOS(
                         process.env.PAYOS_CLIENT_ID,
@@ -92,14 +95,25 @@ export class PayOSService {
                                 await this.guestsRepository.save(guests);
                         }
 
+                        // const paymentData = {
+                        //         orderCode: paymentId,
+                        //         amount: totalAmount,
+                        //         description,
+                        //         returnUrl: `https://mintoinvitions.netlify.app/URLreturn/success/${templateId}`,
+                        //         cancelUrl:
+                        //                 process.env.PAYOS_CANCEL_URL ||
+                        //                 'https://mintoinvitions.netlify.app/URLreturn/cancel',
+                        //         buyerEmail: user.email,
+                        //         buyerName: user.full_name,
+                        //         buyerPhone: user.phone || '',
+                        // };
+
                         const paymentData = {
                                 orderCode: paymentId,
                                 amount: totalAmount,
                                 description,
-                                returnUrl: `https://mintoinvitions.netlify.app/URLreturn/success/${templateId}`,
-                                cancelUrl:
-                                        process.env.PAYOS_CANCEL_URL ||
-                                        'https://mintoinvitions.netlify.app/URLreturn/cancel',
+                                returnUrl: `http://localhost:9000//URLreturn/success/${templateId}`,
+                                cancelUrl: 'http://localhost:9000//URLreturn/cancel',
                                 buyerEmail: user.email,
                                 buyerName: user.full_name,
                                 buyerPhone: user.phone || '',
@@ -278,6 +292,184 @@ export class PayOSService {
                 } catch (error) {
                         console.error('Lỗi xử lý webhook:', error.message, error.stack);
                         return { success: false, message: 'Không thể xử lý webhook' };
+                }
+        }
+
+        async getUser(userId: number) {
+                return await this.userRepository.findOne({
+                        where: { user_id: userId },
+                        relations: ['role'],
+                });
+        }
+
+        async getAllStatistics(startDate?: string, endDate?: string) {
+                try {
+                        // Tổng doanh thu
+                        let revenueQuery = this.paymentRepository
+                                .createQueryBuilder('payment')
+                                .select([
+                                        // Adjust for timezone (assuming database stores dates in UTC)
+                                        // Convert payment_date to local timezone (UTC+7) before extracting the date
+                                        'DATE(DATE_ADD(payment.payment_date, INTERVAL 7 HOUR)) as paymentDate',
+                                        'SUM(payment.amount) as totalAmount',
+                                ])
+                                .where('payment.status = :status', { status: 'COMPLETED' });
+
+                        // Tổng đơn hàng bị hủy
+                        let canceledQuery = this.paymentRepository
+                                .createQueryBuilder('payment')
+                                .where('payment.status = :status', { status: 'CANCELLED' });
+
+                        // Chi tiết các thanh toán COMPLETED
+                        let completedPaymentsQuery = this.paymentRepository
+                                .createQueryBuilder('payment')
+                                .select([
+                                        'payment.payment_id as paymentId',
+                                        'payment.payment_date as paymentDate',
+                                        'payment.amount as amount',
+                                ])
+                                .where('payment.status = :status', { status: 'COMPLETED' });
+
+                        // Thêm điều kiện thời gian nếu có
+                        if (startDate) {
+                                // Ensure startDate is interpreted as the start of the day in UTC
+                                const startDateAdjusted = `${startDate}T00:00:00.000Z`;
+                                revenueQuery = revenueQuery.andWhere(
+                                        'payment.payment_date >= :startDate',
+                                        { startDate: startDateAdjusted }
+                                );
+                                canceledQuery = canceledQuery.andWhere(
+                                        'payment.payment_date >= :startDate',
+                                        { startDate: startDateAdjusted }
+                                );
+                                completedPaymentsQuery = completedPaymentsQuery.andWhere(
+                                        'payment.payment_date >= :startDate',
+                                        { startDate: startDateAdjusted }
+                                );
+                        }
+                        if (endDate) {
+                                // Ensure endDate includes the full day (up to 23:59:59 in UTC)
+                                const endDateAdjusted = `${endDate}T23:59:59.999Z`;
+                                revenueQuery = revenueQuery.andWhere(
+                                        'payment.payment_date <= :endDate',
+                                        { endDate: endDateAdjusted }
+                                );
+                                canceledQuery = canceledQuery.andWhere(
+                                        'payment.payment_date <= :endDate',
+                                        { endDate: endDateAdjusted }
+                                );
+                                completedPaymentsQuery = completedPaymentsQuery.andWhere(
+                                        'payment.payment_date <= :endDate',
+                                        { endDate: endDateAdjusted }
+                                );
+                        }
+
+                        const paidOrders = await revenueQuery
+                                .groupBy('DATE(DATE_ADD(payment.payment_date, INTERVAL 7 HOUR))')
+                                .orderBy('paymentDate', 'DESC')
+                                .getRawMany();
+
+                        const revenueData = {
+                                dailyRevenue: paidOrders.map((order) => ({
+                                        // Convert the date back to UTC for consistency in the API response
+                                        date: order.paymentDate,
+                                        totalAmount: parseFloat(order.totalAmount || 0),
+                                })),
+                                totalRevenue: paidOrders.reduce(
+                                        (sum, order) => sum + parseFloat(order.totalAmount || 0),
+                                        0
+                                ),
+                        };
+
+                        const canceledCount = await canceledQuery.getCount();
+
+                        const completedPayments = await completedPaymentsQuery
+                                .orderBy('payment.payment_date', 'DESC')
+                                .getRawMany();
+
+                        const completedPaymentsData = completedPayments.map((payment) => ({
+                                paymentId: payment.paymentId,
+                                paymentDate: payment.paymentDate,
+                                amount: parseFloat(payment.amount || 0),
+                        }));
+
+                        // Tổng số template
+                        const totalTemplateCount = await this.templatesRepository
+                                .createQueryBuilder('template')
+                                .getCount();
+
+                        // Lấy tất cả template (template_id và name)
+                        const allTemplates = await this.templatesRepository
+                                .createQueryBuilder('template')
+                                .select([
+                                        'template.template_id as templateId',
+                                        'template.name as templateName',
+                                ])
+                                .getRawMany();
+
+                        // Thống kê sử dụng template
+                        const templateUsage = await this.cardRepository
+                                .createQueryBuilder('card')
+                                .innerJoin('card.template', 'template')
+                                .select([
+                                        'template.template_id as templateId',
+                                        'template.name as templateName',
+                                        'COUNT(card.card_id) as usageCount',
+                                ])
+                                .groupBy('template.template_id, template.name')
+                                .orderBy('usageCount', 'DESC')
+                                .getRawMany();
+
+                        // Kiểm tra nếu không có dữ liệu
+                        if (
+                                revenueData.dailyRevenue.length === 0 &&
+                                canceledCount === 0 &&
+                                completedPaymentsData.length === 0 &&
+                                templateUsage.length === 0 &&
+                                totalTemplateCount === 0
+                        ) {
+                                return {
+                                        success: true,
+                                        message: 'Không có dữ liệu thống kê trong hệ thống',
+                                        data: {
+                                                revenue: revenueData,
+                                                totalCanceledOrders: canceledCount,
+                                                completedPayments: completedPaymentsData,
+                                                totalTemplates: totalTemplateCount,
+                                                templateUsage: templateUsage.map((template) => ({
+                                                        templateId: template.templateId,
+                                                        templateName: template.templateName,
+                                                        usageCount: parseInt(template.usageCount),
+                                                })),
+                                                allTemplates: allTemplates.map((template) => ({
+                                                        templateId: template.templateId,
+                                                        templateName: template.templateName,
+                                                })),
+                                        },
+                                };
+                        }
+
+                        return {
+                                success: true,
+                                data: {
+                                        revenue: revenueData,
+                                        totalCanceledOrders: canceledCount,
+                                        completedPayments: completedPaymentsData,
+                                        totalTemplates: totalTemplateCount,
+                                        allTemplates: allTemplates.map((template) => ({
+                                                templateId: template.templateId,
+                                                templateName: template.templateName,
+                                        })),
+                                        templateUsage: templateUsage.map((template) => ({
+                                                templateId: template.templateId,
+                                                templateName: template.templateName,
+                                                usageCount: parseInt(template.usageCount),
+                                        })),
+                                },
+                        };
+                } catch (error) {
+                        console.error('Lỗi khi lấy thống kê:', error.message, error.stack);
+                        throw new BadRequestException('Không thể lấy thông tin thống kê');
                 }
         }
 }

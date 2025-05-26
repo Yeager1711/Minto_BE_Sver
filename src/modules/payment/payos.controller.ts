@@ -6,6 +6,8 @@ import {
         Param,
         Request,
         UnauthorizedException,
+        Get,
+        Query,
 } from '@nestjs/common';
 import { PayOSService } from './payos.service';
 
@@ -61,5 +63,21 @@ export class PayOSController {
                 }
                 const result = await this.payosService.checkPaymentStatus(orderCode, userId);
                 return result;
+        }
+
+        @Get('statistics')
+        async getAllStatistics(
+                @Request() req: AuthenticatedRequest,
+                @Query('startDate') startDate?: string,
+                @Query('endDate') endDate?: string
+        ) {
+                const userId = req.user?.user_id;
+                const user = await this.payosService.getUser(userId);
+                if (!user || user.role.name !== 'admin') {
+                        throw new UnauthorizedException(
+                                'Administrative privileges are required to view system-wide analytics.'
+                        );
+                }
+                return await this.payosService.getAllStatistics(startDate, endDate);
         }
 }
