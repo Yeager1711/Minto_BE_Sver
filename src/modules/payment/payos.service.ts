@@ -95,29 +95,29 @@ export class PayOSService {
                                 await this.guestsRepository.save(guests);
                         }
 
-                        // const paymentData = {
-                        //         orderCode: paymentId,
-                        //         amount: totalAmount,
-                        //         description,
-                        //         returnUrl: `https://mintoinvitions.netlify.app/URLreturn/success/${templateId}`,
-                        //         cancelUrl:
-                        //                 process.env.PAYOS_CANCEL_URL ||
-                        //                 'https://mintoinvitions.netlify.app/URLreturn/cancel',
-                        //         buyerEmail: user.email,
-                        //         buyerName: user.full_name,
-                        //         buyerPhone: user.phone || '',
-                        // };
-
                         const paymentData = {
                                 orderCode: paymentId,
                                 amount: totalAmount,
                                 description,
-                                returnUrl: `http://localhost:9000//URLreturn/success/${templateId}`,
-                                cancelUrl: 'http://localhost:9000//URLreturn/cancel',
+                                returnUrl: `https://mintoinvitions.netlify.app/URLreturn/success/${templateId}`,
+                                cancelUrl:
+                                        process.env.PAYOS_CANCEL_URL ||
+                                        'https://mintoinvitions.netlify.app/URLreturn/cancel',
                                 buyerEmail: user.email,
                                 buyerName: user.full_name,
                                 buyerPhone: user.phone || '',
                         };
+
+                        // const paymentData = {
+                        //         orderCode: paymentId,
+                        //         amount: totalAmount,
+                        //         description,
+                        //         returnUrl: `http://localhost:9000//URLreturn/success/${templateId}`,
+                        //         cancelUrl: 'http://localhost:9000//URLreturn/cancel',
+                        //         buyerEmail: user.email,
+                        //         buyerName: user.full_name,
+                        //         buyerPhone: user.phone || '',
+                        // };
 
                         const paymentLink = await this.payos.createPaymentLink(paymentData);
 
