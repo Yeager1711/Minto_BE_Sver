@@ -1,6 +1,7 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Payments } from '../../entities/payments.entity';
 import { Users } from '../../entities/users.entity';
 import { Cards } from '../../entities/cards.entity';
@@ -12,6 +13,7 @@ const PayOS = require('@payos/node');
 @Injectable()
 export class PayOSService {
         private payos: any;
+        private readonly logger = new Logger(PayOSService.name);
 
         constructor(
                 @InjectRepository(Payments)
@@ -99,26 +101,12 @@ export class PayOSService {
                                 orderCode: paymentId,
                                 amount: totalAmount,
                                 description,
-                                returnUrl: `https://mintoinvitions.netlify.app/URLreturn/success/${templateId}`,
-                                cancelUrl:
-                                        process.env.PAYOS_CANCEL_URL ||
-                                        'https://mintoinvitions.netlify.app/URLreturn/cancel',
+                                returnUrl: `${process.env.NEXT_PUBLIC_PAYOS_RETURN_URL}/URLreturn/success/${templateId}`,
+                                cancelUrl: `${process.env.NEXT_PUBLIC_PAYOS_RETURN_URL}/URLreturn/cancel`,
                                 buyerEmail: user.email,
                                 buyerName: user.full_name,
                                 buyerPhone: user.phone || '',
                         };
-
-                        // const paymentData = {
-                        //         orderCode: paymentId,
-                        //         amount: totalAmount,
-                        //         description,
-                        //         returnUrl: `http://localhost:9000//URLreturn/success/${templateId}`,
-                        //         cancelUrl: 'http://localhost:9000//URLreturn/cancel',
-                        //         buyerEmail: user.email,
-                        //         buyerName: user.full_name,
-                        //         buyerPhone: user.phone || '',
-                        // };
-
                         const paymentLink = await this.payos.createPaymentLink(paymentData);
 
                         return {
@@ -292,6 +280,39 @@ export class PayOSService {
                 } catch (error) {
                         console.error('Lỗi xử lý webhook:', error.message, error.stack);
                         return { success: false, message: 'Không thể xử lý webhook' };
+                }
+        }
+
+        @Cron(CronExpression.EVERY_5_MINUTES)
+        async handleExpiredPayments() {
+                try {
+                        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+                        const expiredPayments = await this.paymentRepository.find({
+                                where: {
+                                        status: 'PENDING',
+                                        payment_date: LessThan(fiveMinutesAgo),
+                                },
+                        });
+
+                        if (expiredPayments.length === 0) {
+                                this.logger.log('No expired payments found.');
+                                return;
+                        }
+
+                        for (const payment of expiredPayments) {
+                                payment.status = 'CANCELLED';
+                                await this.paymentRepository.save(payment);
+                                this.logger.log(
+                                        `Payment ${payment.transaction_id} has been cancelled due to expiration.`
+                                );
+                        }
+                } catch (error) {
+                        this.logger.error(
+                                'Error cancelling expired payments:',
+                                error.message,
+                                error.stack
+                        );
                 }
         }
 
