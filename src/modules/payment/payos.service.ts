@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThan, Repository } from 'typeorm';
+import { Equal, LessThan, Repository } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Payments } from '../../entities/payments.entity';
 import { Users } from '../../entities/users.entity';
@@ -287,13 +287,14 @@ export class PayOSService {
         @Cron(CronExpression.EVERY_5_MINUTES)
         async handleExpiredPayments() {
                 try {
-                        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                        const fiveMinutesAgo = new Date(Date.now() - 1 * 60 * 1000);
 
                         const expiredPayments = await this.paymentRepository.find({
                                 where: {
                                         status: 'PENDING',
                                         payment_date: LessThan(fiveMinutesAgo),
                                 },
+                                relations: ['card'], // Thêm quan hệ để lấy card_id
                         });
 
                         if (expiredPayments.length === 0) {
@@ -302,15 +303,40 @@ export class PayOSService {
                         }
 
                         for (const payment of expiredPayments) {
+                                // Đặt trạng thái Payment thành CANCELLED
                                 payment.status = 'CANCELLED';
                                 await this.paymentRepository.save(payment);
                                 this.logger.log(
                                         `Payment ${payment.transaction_id} has been cancelled due to expiration.`
                                 );
+
+                                // Xóa các bản ghi Guests có card_id khớp
+                                if (payment.card && payment.card.card_id) {
+                                        const guests = await this.guestsRepository.find({
+                                                where: {
+                                                        card_id: Equal(payment.card.card_id),
+                                                },
+                                        });
+
+                                        if (guests.length > 0) {
+                                                await this.guestsRepository.remove(guests);
+                                                this.logger.log(
+                                                        `Deleted ${guests.length} guests with card_id: ${payment.card.card_id} for cancelled payment ${payment.transaction_id}`
+                                                );
+                                        } else {
+                                                this.logger.log(
+                                                        `No guests found with card_id: ${payment.card.card_id} for cancelled payment ${payment.transaction_id}`
+                                                );
+                                        }
+                                } else {
+                                        this.logger.warn(
+                                                `Payment ${payment.transaction_id} has no associated card_id`
+                                        );
+                                }
                         }
                 } catch (error) {
                         this.logger.error(
-                                'Error cancelling expired payments:',
+                                'Error cancelling expired payments or deleting guests:',
                                 error.message,
                                 error.stack
                         );
