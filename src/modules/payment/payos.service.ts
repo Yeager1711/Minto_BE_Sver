@@ -287,7 +287,7 @@ export class PayOSService {
         @Cron(CronExpression.EVERY_5_MINUTES)
         async handleExpiredPayments() {
                 try {
-                        const fiveMinutesAgo = new Date(Date.now() - 1 * 60 * 1000);
+                        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
                         const expiredPayments = await this.paymentRepository.find({
                                 where: {
@@ -352,13 +352,12 @@ export class PayOSService {
 
         async getAllStatistics(startDate?: string, endDate?: string) {
                 try {
-                        // Tổng doanh thu
+                        // Tổng doanh thu từ completed payments
                         let revenueQuery = this.paymentRepository
                                 .createQueryBuilder('payment')
                                 .select([
-                                        // Adjust for timezone (assuming database stores dates in UTC)
-                                        // Convert payment_date to local timezone (UTC+7) before extracting the date
-                                        'DATE(DATE_ADD(payment.payment_date, INTERVAL 7 HOUR)) as paymentDate',
+                                        // Adjust to UTC+7 and extract date correctly
+                                        "DATE(CONVERT_TZ(payment.payment_date, '+00:00', '+07:00')) as paymentDate",
                                         'SUM(payment.amount) as totalAmount',
                                 ])
                                 .where('payment.status = :status', { status: 'COMPLETED' });
@@ -378,9 +377,18 @@ export class PayOSService {
                                 ])
                                 .where('payment.status = :status', { status: 'COMPLETED' });
 
+                        // Chi tiết các thanh toán CANCELLED
+                        let canceledPaymentsQuery = this.paymentRepository
+                                .createQueryBuilder('payment')
+                                .select([
+                                        'payment.payment_id as paymentId',
+                                        'payment.payment_date as paymentDate',
+                                        'payment.amount as amount',
+                                ])
+                                .where('payment.status = :status', { status: 'CANCELLED' });
+
                         // Thêm điều kiện thời gian nếu có
                         if (startDate) {
-                                // Ensure startDate is interpreted as the start of the day in UTC
                                 const startDateAdjusted = `${startDate}T00:00:00.000Z`;
                                 revenueQuery = revenueQuery.andWhere(
                                         'payment.payment_date >= :startDate',
@@ -394,9 +402,12 @@ export class PayOSService {
                                         'payment.payment_date >= :startDate',
                                         { startDate: startDateAdjusted }
                                 );
+                                canceledPaymentsQuery = canceledPaymentsQuery.andWhere(
+                                        'payment.payment_date >= :startDate',
+                                        { startDate: startDateAdjusted }
+                                );
                         }
                         if (endDate) {
-                                // Ensure endDate includes the full day (up to 23:59:59 in UTC)
                                 const endDateAdjusted = `${endDate}T23:59:59.999Z`;
                                 revenueQuery = revenueQuery.andWhere(
                                         'payment.payment_date <= :endDate',
@@ -410,16 +421,21 @@ export class PayOSService {
                                         'payment.payment_date <= :endDate',
                                         { endDate: endDateAdjusted }
                                 );
+                                canceledPaymentsQuery = canceledPaymentsQuery.andWhere(
+                                        'payment.payment_date <= :endDate',
+                                        { endDate: endDateAdjusted }
+                                );
                         }
 
                         const paidOrders = await revenueQuery
-                                .groupBy('DATE(DATE_ADD(payment.payment_date, INTERVAL 7 HOUR))')
+                                .groupBy(
+                                        "DATE(CONVERT_TZ(payment.payment_date, '+00:00', '+07:00'))"
+                                )
                                 .orderBy('paymentDate', 'DESC')
                                 .getRawMany();
 
                         const revenueData = {
                                 dailyRevenue: paidOrders.map((order) => ({
-                                        // Convert the date back to UTC for consistency in the API response
                                         date: order.paymentDate,
                                         totalAmount: parseFloat(order.totalAmount || 0),
                                 })),
@@ -430,12 +446,20 @@ export class PayOSService {
                         };
 
                         const canceledCount = await canceledQuery.getCount();
-
                         const completedPayments = await completedPaymentsQuery
+                                .orderBy('payment.payment_date', 'DESC')
+                                .getRawMany();
+                        const canceledPayments = await canceledPaymentsQuery
                                 .orderBy('payment.payment_date', 'DESC')
                                 .getRawMany();
 
                         const completedPaymentsData = completedPayments.map((payment) => ({
+                                paymentId: payment.paymentId,
+                                paymentDate: payment.paymentDate,
+                                amount: parseFloat(payment.amount || 0),
+                        }));
+
+                        const canceledPaymentsData = canceledPayments.map((payment) => ({
                                 paymentId: payment.paymentId,
                                 paymentDate: payment.paymentDate,
                                 amount: parseFloat(payment.amount || 0),
@@ -446,7 +470,7 @@ export class PayOSService {
                                 .createQueryBuilder('template')
                                 .getCount();
 
-                        // Lấy tất cả template (template_id và name)
+                        // Lấy tất cả template
                         const allTemplates = await this.templatesRepository
                                 .createQueryBuilder('template')
                                 .select([
@@ -468,11 +492,11 @@ export class PayOSService {
                                 .orderBy('usageCount', 'DESC')
                                 .getRawMany();
 
-                        // Kiểm tra nếu không có dữ liệu
                         if (
                                 revenueData.dailyRevenue.length === 0 &&
                                 canceledCount === 0 &&
                                 completedPaymentsData.length === 0 &&
+                                canceledPaymentsData.length === 0 &&
                                 templateUsage.length === 0 &&
                                 totalTemplateCount === 0
                         ) {
@@ -483,6 +507,7 @@ export class PayOSService {
                                                 revenue: revenueData,
                                                 totalCanceledOrders: canceledCount,
                                                 completedPayments: completedPaymentsData,
+                                                canceledPayments: canceledPaymentsData,
                                                 totalTemplates: totalTemplateCount,
                                                 templateUsage: templateUsage.map((template) => ({
                                                         templateId: template.templateId,
@@ -503,6 +528,7 @@ export class PayOSService {
                                         revenue: revenueData,
                                         totalCanceledOrders: canceledCount,
                                         completedPayments: completedPaymentsData,
+                                        canceledPayments: canceledPaymentsData,
                                         totalTemplates: totalTemplateCount,
                                         allTemplates: allTemplates.map((template) => ({
                                                 templateId: template.templateId,
