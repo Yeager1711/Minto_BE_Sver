@@ -5,7 +5,7 @@ import {
         NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, IsNull } from 'typeorm';
+import { Repository, FindOptionsWhere, IsNull, Equal } from 'typeorm';
 import { Cards } from '../../entities/cards.entity';
 import { Invitations } from '../../entities/invitations.entity';
 import { Guests } from '../../entities/guests.entity';
@@ -197,16 +197,18 @@ export class CardService {
                                                 }
                                         );
 
-                                        // Tìm và cập nhật invitation_id và card_id cho các bản ghi Guests
+                                        // Tìm và cập nhật invitation_id cho các bản ghi Guests có card_id khớp và invitation_id = NULL
                                         const existingGuests = await this.guestsRepository.find({
                                                 where: {
-                                                        invitation_id: IsNull(), // Sử dụng IsNull cho trường hợp NULL
+                                                        card_id: Equal(updatedCard.card_id), // Chỉ lấy Guests có card_id khớp
+                                                        invitation_id: IsNull(), // Chỉ lấy Guests chưa có invitation_id
                                                 },
                                         });
                                         this.logger.info(
-                                                `Tìm thấy ${existingGuests.length} khách mời với invitation_id = NULL`,
+                                                `Tìm thấy ${existingGuests.length} khách mời với card_id = ${updatedCard.card_id} và invitation_id = NULL`,
                                                 {
                                                         guestCount: existingGuests.length,
+                                                        cardId: updatedCard.card_id,
                                                 }
                                         );
 
@@ -215,7 +217,6 @@ export class CardService {
                                                         existingGuests.map(async (guest) => {
                                                                 guest.invitation_id =
                                                                         savedInvitation.invitation_id;
-                                                                guest.card_id = updatedCard.card_id; // Gán card_id cho khách mời
                                                                 await transactionalEntityManager.save(
                                                                         Guests,
                                                                         guest
@@ -233,7 +234,7 @@ export class CardService {
                                                 );
                                         } else {
                                                 this.logger.warn(
-                                                        `Không tìm thấy khách mời nào với invitation_id = NULL để cập nhật`,
+                                                        `Không tìm thấy khách mời nào với card_id = ${updatedCard.card_id} và invitation_id = NULL để cập nhật`,
                                                         {
                                                                 cardId: updatedCard.card_id,
                                                                 orderCode,

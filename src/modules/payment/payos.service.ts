@@ -50,7 +50,7 @@ export class PayOSService {
                                 throw new BadRequestException('Người dùng không tồn tại');
                         }
 
-                        // Create a new Card entity
+                        // Tạo Card entity
                         const card = new Cards();
                         card.card_id = Cards.generateRandomId();
                         card.user_id = userId;
@@ -60,10 +60,10 @@ export class PayOSService {
                         card.status = 'DRAFT';
                         card.user = user;
 
-                        // Save the Card entity
+                        // Lưu Card entity
                         await this.cardRepository.save(card);
 
-                        // Create Payment entity
+                        // Tạo Payment entity
                         const paymentId = Payments.generateRandomId();
                         const orderCode = paymentId.toString();
 
@@ -77,10 +77,10 @@ export class PayOSService {
                         payment.status = 'PENDING';
                         payment.transaction_id = orderCode;
 
-                        // Save the Payment entity
+                        // Lưu Payment entity
                         await this.paymentRepository.save(payment);
 
-                        // Tạo Guests với invitation_id = null
+                        // Tạo Guests với card_id được gán ngay lập tức
                         if (inviteeNames && inviteeNames.length > 0) {
                                 const guests = inviteeNames.map((name) => {
                                         if (!name.trim()) {
@@ -92,6 +92,7 @@ export class PayOSService {
                                         guest.guest_id = Guests.generateRandomId();
                                         guest.invitation_id = null; // Lưu null ban đầu
                                         guest.full_name = name;
+                                        guest.card_id = card.card_id; // Gán card_id ngay khi tạo
                                         return guest;
                                 });
                                 await this.guestsRepository.save(guests);

@@ -258,7 +258,7 @@ if (process.env.NODE_ENV !== 'production') {
 //                                         method: RequestMethod.GET,
 //                                 },
 //                                 {
-//                                         path: 'cards/guest/:template_id/:guest_id/:invitation_id',
+//                                         path: 'cards/:template_id/:guest_id/:invitation_id/:card_id',
 //                                         method: RequestMethod.GET,
 //                                 },
 //                                 {
