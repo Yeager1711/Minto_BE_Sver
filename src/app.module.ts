@@ -59,7 +59,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                                 Guests,
                                 Payments,
                         ],
-                        synchronize: true,
+                        synchronize: false,
                         ssl: {
                                 ca: readFileSync(join(__dirname, '..', 'ca.pem')), // Đường dẫn đến tệp CA certificate từ Aiven
                                 rejectUnauthorized: true,
