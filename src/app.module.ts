@@ -62,7 +62,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                         synchronize: false,
                         ssl: {
                                 ca: readFileSync(join(__dirname, '..', 'ca.pem')), // Đường dẫn đến tệp CA certificate từ Aiven
-                                rejectUnauthorized: true,
+                                rejectUnauthorized: false,
                         },
                         driver: require('mysql2'), // Sử dụng mysql2 để hỗ trợ tốt hơn
                 }),
