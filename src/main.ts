@@ -16,7 +16,7 @@ async function bootstrap() {
                 .map((origin) => origin.trim().replace(/\/$/, '')) || [
                 'http://localhost:9000',
                 'https://mintoinvitions.netlify.app',
-                'https://minto-be-sver.onrender.com'
+                'https://minto-one.vercel.app'
         ];
 
         // Configure CORS
