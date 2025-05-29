@@ -9,6 +9,10 @@ import { readFileSync } from 'fs';
 import { ScheduleModule } from '@nestjs/schedule';
 import * as crypto from 'crypto';
 
+if (!(global as any).crypto) {
+        (global as any).crypto = crypto;
+}
+
 // Entities
 import { Users } from './entities/users.entity';
 import { Role } from './entities/role.entity';
@@ -150,7 +154,6 @@ if (process.env.NODE_ENV !== 'production') {
         console.log('SSL Config Enabled:', true);
         console.log('JWT_SECRET:', process.env.JWT_SECRET);
 }
-
 
 // MYSQL LARAGON
 
