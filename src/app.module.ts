@@ -43,8 +43,10 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                 }),
                 TypeOrmModule.forRoot({
                         type: 'mysql',
-                        host: process.env.DB_HOST || '',
-                        port: parseInt(process.env.DB_PORT, 10),
+                        host:
+                                process.env.DB_HOST ||
+                                'minto-3600fad4-jobmarket1711-00fc.k.aivencloud.com',
+                        port: parseInt(process.env.DB_PORT, 10) || 27095,
                         username: process.env.DB_USER || '',
                         password: process.env.DB_PASSWORD || '', // Thay bằng mật khẩu thực tế từ Aiven
                         database: process.env.DB_NAME || 'minto',
@@ -149,7 +151,6 @@ if (process.env.NODE_ENV !== 'production') {
         console.log('SSL Config Enabled:', true);
         console.log('JWT_SECRET:', process.env.JWT_SECRET);
 }
-
 
 // MYSQL LARAGON
 
