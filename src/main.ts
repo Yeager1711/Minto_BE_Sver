@@ -16,13 +16,13 @@ async function bootstrap() {
                 .map((origin) => origin.trim().replace(/\/$/, '')) || [
                 'http://localhost:9000',
                 'https://mintoinvitions.netlify.app',
-                'https://minto-one.vercel.app'
+                'https://minto-one.vercel.app',
         ];
 
         // Configure CORS
         app.enableCors({
                 origin: (origin, callback) => {
-                        const normalizedOrigin = origin?.replace(/\/$/, ''); // Bỏ dấu gạch chéo ở cuối từ nguồn gốc yêu cầu
+                        const normalizedOrigin = origin?.replace(/\/$/, '');
                         if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
                                 callback(null, true);
                         } else {
@@ -30,7 +30,7 @@ async function bootstrap() {
                         }
                 },
                 credentials: true,
-                methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+                methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
                 allowedHeaders: 'Content-Type, Authorization, ngrok-skip-browser-warning',
         });
 
