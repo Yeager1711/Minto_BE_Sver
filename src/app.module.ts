@@ -139,7 +139,9 @@ export class AppModule implements NestModule {
                                 { path: 'cards/user-templates', method: RequestMethod.GET },
                                 { path: 'payos/create-payment', method: RequestMethod.POST },
                                 { path: 'payos/status/:orderCode', method: RequestMethod.PATCH },
-                                { path: 'payos/statistics', method: RequestMethod.GET }
+                                { path: 'payos/statistics', method: RequestMethod.GET },
+{ path: 'users/profile/name', method: RequestMethod.PATCH },
+
                         );
         }
 }
@@ -278,7 +280,8 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 { path: 'cards/user-templates', method: RequestMethod.GET },
 //                                 { path: 'payos/create-payment', method: RequestMethod.POST },
 //                                 { path: 'payos/status/:orderCode', method: RequestMethod.PATCH },
-//                                 { path: 'payos/statistics', method: RequestMethod.GET }
+//                                 { path: 'payos/statistics', method: RequestMethod.GET },
+//                                 { path: 'users/profile/name', method: RequestMethod.PATCH }
 //                         );
 //         }
 // }
