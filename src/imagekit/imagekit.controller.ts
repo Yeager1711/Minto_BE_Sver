@@ -9,9 +9,9 @@ export class ImageKitController {
 
         constructor(private configService: ConfigService) {
                 this.imagekit = new ImageKit({
-                        publicKey: this.configService.get<string>('IMAGEKIT_PUBLIC_KEY') || '',
-                        privateKey: this.configService.get<string>('IMAGEKIT_PRIVATE_KEY') || '',
-                        urlEndpoint: this.configService.get<string>('IMAGEKIT_URL_ENDPOINT') || '',
+                        publicKey: this.configService.get<string>('NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY') || '',
+                        privateKey: this.configService.get<string>('NEXT_PUBLIC_IMAGEKIT_PRIVATE_KEY') || '',
+                        urlEndpoint: this.configService.get<string>('NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT') || '',
                 });
         }
 
