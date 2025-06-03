@@ -68,7 +68,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                                 QR_Users,
                                 Error_Feedbacks,
                         ],
-                        synchronize: false,
+                        synchronize: true,
                         ssl: {
                                 ca: readFileSync(join(__dirname, '..', 'ca.pem')), // Đường dẫn đến tệp CA certificate từ Aiven
                                 rejectUnauthorized: false,
