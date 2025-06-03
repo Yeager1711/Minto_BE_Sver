@@ -66,7 +66,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                                 Guests,
                                 Payments,
                                 QR_Users,
-                                Error_Feedbacks,
+                                Error_Feedbacks, 
                         ],
                         synchronize: true,
                         ssl: {
