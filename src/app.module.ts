@@ -23,7 +23,8 @@ import { Cards } from './entities/cards.entity';
 import { Invitations } from './entities/invitations.entity';
 import { Guests } from './entities/guests.entity';
 import { Payments } from './entities/payments.entity';
-
+import { QR_Users } from './entities/qr-users.entity';
+import { Error_Feedbacks } from './entities/error-feedbacks.entity';
 // Middleware
 import { AuthMiddleware } from './middlewares/auth/auth.middleware';
 import { ImageKitController } from './imagekit/imagekit.controller';
@@ -36,6 +37,7 @@ import { AuthModule } from './modules/auth/register/auth.module';
 import { AuthUserLoginModule } from './modules/auth/login/login_user.module';
 import { CardModule } from './modules/card/card.module';
 import { PayOSModule } from './modules/payment/payos.module';
+import { QRModule } from './modules/QR_code/qr.module';
 
 const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
 
@@ -63,6 +65,8 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                                 Invitations,
                                 Guests,
                                 Payments,
+                                QR_Users,
+                                Error_Feedbacks,
                         ],
                         synchronize: false,
                         ssl: {
@@ -107,7 +111,8 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                 CategoryModule,
                 TemplateModule,
                 CardModule,
-                PayOSModule, // Thêm PayOSModule
+                PayOSModule,
+                QRModule,
         ],
         controllers: [ImageKitController], // Thêm ImageKitController vào đây
 })
@@ -123,13 +128,15 @@ export class AppModule implements NestModule {
                                         method: RequestMethod.GET,
                                 },
                                 {
-                                        path: 'cards/guest/:template_id/:guest_id/:invitation_id',
+                                        path: 'cards/:template_id/:guest_id/:invitation_id/:card_id',
                                         method: RequestMethod.GET,
                                 },
                                 {
-                                        path: 'templates/getTemplate/template_id',
+                                        path: 'templates/getTemplate',
                                         method: RequestMethod.GET,
-                                }
+                                },
+
+                                { path: 'qr/public/qrs/:userId', method: RequestMethod.GET }
                         )
                         .forRoutes(
                                 { path: 'users/profile', method: RequestMethod.GET },
@@ -140,8 +147,10 @@ export class AppModule implements NestModule {
                                 { path: 'payos/create-payment', method: RequestMethod.POST },
                                 { path: 'payos/status/:orderCode', method: RequestMethod.PATCH },
                                 { path: 'payos/statistics', method: RequestMethod.GET },
-{ path: 'users/profile/name', method: RequestMethod.PATCH },
-
+                                { path: 'users/profile/name', method: RequestMethod.PATCH },
+                                { path: 'qr/create', method: RequestMethod.POST },
+                                { path: 'qr/my-qrs', method: RequestMethod.GET },
+                                { path: 'qr/:qrId/status', method: RequestMethod.PATCH }
                         );
         }
 }
@@ -178,6 +187,9 @@ if (process.env.NODE_ENV !== 'production') {
 // import { Guests } from './entities/guests.entity';
 // import { Payments } from './entities/payments.entity';
 
+// import { QR_Users } from './entities/qr-users.entity';
+// import { Error_Feedbacks } from './entities/error-feedbacks.entity';
+
 // // Middleware
 // import { AuthMiddleware } from './middlewares/auth/auth.middleware';
 
@@ -189,6 +201,7 @@ if (process.env.NODE_ENV !== 'production') {
 // import { AuthUserLoginModule } from './modules/auth/login/login_user.module';
 // import { CardModule } from './modules/card/card.module';
 // import { PayOSModule } from './modules/payment/payos.module';
+// import { QRModule } from './modules/QR_code/qr.module';
 
 // // Controllers
 // import { ImageKitController } from './imagekit/imagekit.controller';
@@ -217,6 +230,8 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 Invitations,
 //                                 Guests,
 //                                 Payments,
+//                                 QR_Users,
+//                                 Error_Feedbacks,
 //                         ],
 //                         synchronize: false,
 //                 }),
@@ -249,6 +264,7 @@ if (process.env.NODE_ENV !== 'production') {
 //                 TemplateModule,
 //                 CardModule,
 //                 PayOSModule,
+//                 QRModule,
 //         ],
 //         controllers: [ImageKitController], // Thêm ImageKitController vào đây
 // })
@@ -270,7 +286,9 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 {
 //                                         path: 'templates/getTemplate',
 //                                         method: RequestMethod.GET,
-//                                 }
+//                                 },
+
+//                                 { path: 'qr/public/qrs/:userId', method: RequestMethod.GET }
 //                         )
 //                         .forRoutes(
 //                                 { path: 'users/profile', method: RequestMethod.GET },
@@ -281,7 +299,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 { path: 'payos/create-payment', method: RequestMethod.POST },
 //                                 { path: 'payos/status/:orderCode', method: RequestMethod.PATCH },
 //                                 { path: 'payos/statistics', method: RequestMethod.GET },
-//                                 { path: 'users/profile/name', method: RequestMethod.PATCH }
+//                                 { path: 'users/profile/name', method: RequestMethod.PATCH },
+//                                 { path: 'qr/create', method: RequestMethod.POST },
+//                                 { path: 'qr/my-qrs', method: RequestMethod.GET },
+//                                 { path: 'qr/:qrId/status', method: RequestMethod.PATCH }
 //                         );
 //         }
 // }

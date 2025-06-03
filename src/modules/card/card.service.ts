@@ -502,6 +502,7 @@ export class CardService {
                                         'invitation.story_groom',
                                         'invitation.story_bride',
                                         'invitation.custom_image',
+                                        'card.user_id',
                                         'card.card_id',
                                         'card.created_at',
                                         'card.custom_data',
@@ -545,6 +546,7 @@ export class CardService {
                                         full_name: guest.full_name,
                                 },
                                 card: {
+                                        user_id: guest.invitation.card.user_id,
                                         card_id: guest.invitation.card.card_id,
                                         created_at: guest.invitation.card.created_at,
                                         status: guest.invitation.card.status,

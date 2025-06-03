@@ -2,6 +2,8 @@ import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn, JoinColumn } from 
 import { Role } from './role.entity';
 import { Cards } from './cards.entity';
 import { Payments } from './payments.entity';
+import { QR_Users } from './qr-users.entity'; 
+import { Error_Feedbacks } from './error-feedbacks.entity'; 
 
 @Entity('Users')
 export class Users {
@@ -42,4 +44,14 @@ export class Users {
 
         @OneToMany(() => Payments, (payments) => payments.user)
         payments: Payments[];
+
+        @OneToMany(() => QR_Users, (qrUsers) => qrUsers.user, {
+                cascade: true, // Tùy chọn, cho phép cascade khi thêm/sửa QR
+        })
+        qrUsers: QR_Users[]; // Danh sách các mã QR của người dùng
+
+        @OneToMany(() => Error_Feedbacks, (errorFeedbacks) => errorFeedbacks.user, {
+                cascade: true, // Tùy chọn, cho phép cascade khi thêm/sửa phản hồi
+        })
+        errorFeedbacks: Error_Feedbacks[]; // Danh sách các phản hồi lỗi của người dùng
 }
