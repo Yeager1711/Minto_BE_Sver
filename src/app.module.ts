@@ -38,6 +38,7 @@ import { AuthUserLoginModule } from './modules/auth/login/login_user.module';
 import { CardModule } from './modules/card/card.module';
 import { PayOSModule } from './modules/payment/payos.module';
 import { QRModule } from './modules/QR_code/qr.module';
+import { ErrorFeedbackModule } from './modules/error-feedback/support_error.module';
 
 const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
 
@@ -66,7 +67,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                                 Guests,
                                 Payments,
                                 QR_Users,
-                                Error_Feedbacks, 
+                                Error_Feedbacks,
                         ],
                         synchronize: true,
                         ssl: {
@@ -113,6 +114,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                 CardModule,
                 PayOSModule,
                 QRModule,
+                ErrorFeedbackModule,
         ],
         controllers: [ImageKitController], // Thêm ImageKitController vào đây
 })
@@ -150,7 +152,12 @@ export class AppModule implements NestModule {
                                 { path: 'users/profile/name', method: RequestMethod.PATCH },
                                 { path: 'qr/create', method: RequestMethod.POST },
                                 { path: 'qr/my-qrs', method: RequestMethod.GET },
-                                { path: 'qr/:qrId/status', method: RequestMethod.PATCH }
+                                { path: 'qr/:qrId/status', method: RequestMethod.PATCH },
+                                { path: 'error-feedback/submit', method: RequestMethod.POST },
+                                {
+                                        path: 'error-feedback/all-error-feedback',
+                                        method: RequestMethod.GET,
+                                }
                         );
         }
 }
@@ -202,6 +209,7 @@ if (process.env.NODE_ENV !== 'production') {
 // import { CardModule } from './modules/card/card.module';
 // import { PayOSModule } from './modules/payment/payos.module';
 // import { QRModule } from './modules/QR_code/qr.module';
+// import { ErrorFeedbackModule } from './modules/error-feedback/support_error.module';
 
 // // Controllers
 // import { ImageKitController } from './imagekit/imagekit.controller';
@@ -254,7 +262,7 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 callback(null, true);
 //                         },
 //                         limits: {
-//                                 fileSize: 5 * 1024 * 1024, // Giới hạn 5MB
+//                                 fileSize: 5 * 1024 * 1024,
 //                         },
 //                 }),
 //                 AuthModule,
@@ -265,8 +273,9 @@ if (process.env.NODE_ENV !== 'production') {
 //                 CardModule,
 //                 PayOSModule,
 //                 QRModule,
+//                 ErrorFeedbackModule,
 //         ],
-//         controllers: [ImageKitController], // Thêm ImageKitController vào đây
+//         controllers: [ImageKitController],
 // })
 // export class AppModule implements NestModule {
 //         configure(consumer: MiddlewareConsumer) {
@@ -302,7 +311,12 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 { path: 'users/profile/name', method: RequestMethod.PATCH },
 //                                 { path: 'qr/create', method: RequestMethod.POST },
 //                                 { path: 'qr/my-qrs', method: RequestMethod.GET },
-//                                 { path: 'qr/:qrId/status', method: RequestMethod.PATCH }
+//                                 { path: 'qr/:qrId/status', method: RequestMethod.PATCH },
+//                                 { path: 'error-feedback/submit', method: RequestMethod.POST },
+//                                 {
+//                                         path: 'error-feedback/all-error-feedback',
+//                                         method: RequestMethod.GET,
+//                                 }
 //                         );
 //         }
 // }
