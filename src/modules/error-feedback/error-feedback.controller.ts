@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Req } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param, Req, NotFoundException } from '@nestjs/common';
 import { ErrorFeedbackService } from './error-feedback.service';
 
 interface AuthenticatedRequest extends Request {
@@ -26,12 +26,22 @@ export class ErrorFeedbackController {
         }
 
         @Get('all-error-feedback')
-        async getUserErrorFeedbacks(@Req() req: AuthenticatedRequest) {
-                const userId = req.user?.user_id;
-                if (!userId) {
-                        throw new Error('User not authenticated');
-                }
-                const feedbacks = await this.errorFeedbackService.getUserErrorFeedbacks(userId);
+        async getAllErrorFeedbacks() {
+                const feedbacks = await this.errorFeedbackService.getAllErrorFeedbacks();
                 return { feedbacks };
+        }
+
+        @Patch(':id')
+        async updateErrorFeedbackStatus(
+                @Param('id') feedbackId: string,
+                @Body('status') status: string,
+                @Body('resolutionNotes') resolutionNotes?: string
+        ) {
+                const feedback = await this.errorFeedbackService.updateErrorFeedbackStatus(
+                        parseInt(feedbackId),
+                        status,
+                        resolutionNotes
+                );
+                return { message: 'Cập nhật trạng thái thành công', feedback };
         }
 }

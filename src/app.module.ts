@@ -38,7 +38,7 @@ import { AuthUserLoginModule } from './modules/auth/login/login_user.module';
 import { CardModule } from './modules/card/card.module';
 import { PayOSModule } from './modules/payment/payos.module';
 import { QRModule } from './modules/QR_code/qr.module';
-import { ErrorFeedbackModule } from './modules/error-feedback/support_error.module';
+import { ErrorFeedbackModule } from './modules/error-feedback/error-feedback.module';
 
 const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
 
@@ -157,6 +157,10 @@ export class AppModule implements NestModule {
                                 {
                                         path: 'error-feedback/all-error-feedback',
                                         method: RequestMethod.GET,
+                                },
+                                {
+                                        path: 'error-feedback/:id',
+                                        method: RequestMethod.PATCH,
                                 }
                         );
         }
@@ -209,7 +213,7 @@ if (process.env.NODE_ENV !== 'production') {
 // import { CardModule } from './modules/card/card.module';
 // import { PayOSModule } from './modules/payment/payos.module';
 // import { QRModule } from './modules/QR_code/qr.module';
-// import { ErrorFeedbackModule } from './modules/error-feedback/support_error.module';
+// import { ErrorFeedbackModule } from './modules/error-feedback/error-feedback.module';
 
 // // Controllers
 // import { ImageKitController } from './imagekit/imagekit.controller';
@@ -316,6 +320,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 {
 //                                         path: 'error-feedback/all-error-feedback',
 //                                         method: RequestMethod.GET,
+//                                 },
+//                                 {
+//                                         path: 'error-feedback/:id',
+//                                         method: RequestMethod.PATCH,
 //                                 }
 //                         );
 //         }
