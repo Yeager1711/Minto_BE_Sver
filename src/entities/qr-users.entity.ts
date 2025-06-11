@@ -42,4 +42,12 @@ export class QR_Users {
                 comment: 'Trạng thái QR ( SUCCESS, ACTIVE, INACTIVE)',
         })
         status: string;
+
+        @Column({
+                type: 'varchar',
+                length: 255,
+                nullable: true,
+                comment: 'Người đại diện',
+        })
+        representative: string;
 }

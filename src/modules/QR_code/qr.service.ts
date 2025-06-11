@@ -33,9 +33,10 @@ export class QRService {
                         accountNumber: string;
                         accountHolder: string;
                         qrCodeUrl: string;
+                        representative?: string;
                 }
         ) {
-                const { bank, accountNumber, accountHolder, qrCodeUrl } = qrData;
+                const { bank, accountNumber, accountHolder, qrCodeUrl, representative } = qrData;
 
                 if (
                         !accountNumber ||
@@ -58,12 +59,13 @@ export class QRService {
                         throw new BadRequestException('URL mã QR không được để trống');
                 }
 
-                const existingQrForUser = await this.qrUsersRepository.findOne({
+                // Kiểm tra số lượng QR hiện tại của người dùng
+                const existingQrsCount = await this.qrUsersRepository.count({
                         where: { user: { user_id: userId } },
                 });
 
-                if (existingQrForUser) {
-                        throw new BadRequestException('Mỗi người dùng chỉ được tạo 1 mã QR');
+                if (existingQrsCount >= 2) {
+                        throw new BadRequestException('Mỗi người dùng chỉ được tạo tối đa 2 mã QR');
                 }
 
                 const existingQr = await this.qrUsersRepository.findOne({
@@ -90,6 +92,7 @@ export class QRService {
                         qr_code_url: qrCodeUrl,
                         created_at: new Date(),
                         status: 'SUCCESS',
+                        representative: representative || null,
                 });
 
                 const savedQr = await this.qrUsersRepository.save(qrUser);
@@ -102,6 +105,7 @@ export class QRService {
                         qrCodeUrl: savedQr.qr_code_url,
                         createdAt: savedQr.created_at,
                         status: savedQr.status,
+                        representative: savedQr.representative,
                 };
         }
 
@@ -118,6 +122,7 @@ export class QRService {
                         qrCodeUrl: qr.qr_code_url,
                         createdAt: qr.created_at,
                         status: qr.status,
+                        representative: qr.representative,
                 }));
         }
 
@@ -133,35 +138,38 @@ export class QRService {
                         qrCodeUrl: qr.qr_code_url,
                         createdAt: qr.created_at,
                         status: qr.status,
+                        representative: qr.representative,
                 }));
         }
 
-        async updateQrStatus(userId: number, qrId: number, newStatus: 'SUCCESS' | 'ACTIVE') {
-                const qr = await this.qrUsersRepository.findOne({
-                        where: { qr_id: qrId, user: { user_id: userId } },
+        async updateQrStatus(userId: number, newStatus: 'SUCCESS' | 'ACTIVE') {
+                // Find all QR codes for the user
+                const qrUsers = await this.qrUsersRepository.find({
+                        where: { user: { user_id: userId } },
                 });
 
-                if (!qr) {
+                if (!qrUsers.length) {
                         throw new NotFoundException('Không tìm thấy mã QR cho người dùng này');
                 }
 
-                if (!['SUCCESS', 'ACTIVE'].includes(newStatus)) {
-                        throw new BadRequestException(
-                                'Trạng thái không hợp lệ. Phải là SUCCESS hoặc ACTIVE.'
-                        );
-                }
+                // Update all QR codes to the new status
+                const updatedQrs = await Promise.all(
+                        qrUsers.map(async (qr) => {
+                                qr.status = newStatus;
+                                return this.qrUsersRepository.save(qr);
+                        })
+                );
 
-                qr.status = newStatus;
-                const updatedQr = await this.qrUsersRepository.save(qr);
-
-                return {
-                        qrId: updatedQr.qr_id,
-                        bank: updatedQr.bank,
-                        accountNumber: updatedQr.account_number,
-                        accountHolder: updatedQr.account_holder,
-                        qrCodeUrl: updatedQr.qr_code_url,
-                        createdAt: updatedQr.created_at,
-                        status: updatedQr.status,
-                };
+                // Return the updated list of QR codes
+                return updatedQrs.map((qr) => ({
+                        qrId: qr.qr_id,
+                        bank: qr.bank,
+                        accountNumber: qr.account_number,
+                        accountHolder: qr.account_holder,
+                        qrCodeUrl: qr.qr_code_url,
+                        createdAt: qr.created_at,
+                        status: qr.status,
+                        representative: qr.representative,
+                }));
         }
 }

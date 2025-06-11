@@ -161,6 +161,10 @@ export class AppModule implements NestModule {
                                 {
                                         path: 'error-feedback/:id',
                                         method: RequestMethod.PATCH,
+                                },
+                                {
+                                        path: 'error-feedback/user-feedbacks',
+                                        method: RequestMethod.GET,
                                 }
                         );
         }
@@ -324,6 +328,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 {
 //                                         path: 'error-feedback/:id',
 //                                         method: RequestMethod.PATCH,
+//                                 },
+//                                 {
+//                                         path: 'error-feedback/user-feedbacks',
+//                                         method: RequestMethod.GET,
 //                                 }
 //                         );
 //         }

@@ -31,6 +31,16 @@ export class ErrorFeedbackController {
                 return { feedbacks };
         }
 
+        @Get('user-feedbacks')
+        async getUserErrorFeedbacks(@Req() req: AuthenticatedRequest) {
+                const userId = req.user?.user_id;
+                if (!userId) {
+                        throw new Error('User not authenticated');
+                }
+                const feedbacks = await this.errorFeedbackService.getUserErrorFeedbacks(userId);
+                return { feedbacks };
+        }
+
         @Patch(':id')
         async updateErrorFeedbackStatus(
                 @Param('id') feedbackId: string,

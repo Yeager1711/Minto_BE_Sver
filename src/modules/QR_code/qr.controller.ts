@@ -29,6 +29,7 @@ export class QRController {
                         accountNumber: string;
                         accountHolder: string;
                         qrCodeUrl: string;
+                        representative?: string;
                 },
                 @Req() req: AuthenticatedRequest
         ) {
@@ -56,7 +57,7 @@ export class QRController {
         @Patch(':qrId/status')
         @HttpCode(200)
         async updateQrStatus(
-                @Param('qrId', ParseIntPipe) qrId: number,
+                @Param('qrId', ParseIntPipe) qrId: number, 
                 @Body('status') status: 'SUCCESS' | 'ACTIVE',
                 @Req() req: AuthenticatedRequest
         ) {
@@ -69,6 +70,6 @@ export class QRController {
                                 'Trạng thái không hợp lệ. Phải là SUCCESS hoặc ACTIVE.'
                         );
                 }
-                return this.qrService.updateQrStatus(userId, qrId, status);
+                return this.qrService.updateQrStatus(userId, status); // Pass only userId and status
         }
 }
