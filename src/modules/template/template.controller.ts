@@ -6,14 +6,9 @@ import {
         HttpStatus,
         HttpException,
         Request,
-        UseInterceptors,
-        UploadedFile,
         Param,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { TemplateService } from './template.service';
-import { writeFileSync } from 'fs';
-import { join, extname } from 'path';
 
 interface AuthenticatedRequest extends Request {
         user?: { user_id?: number; userId?: number; email?: string };
@@ -26,6 +21,7 @@ interface CreateTemplateDto {
         price: string;
         category_id: string;
         status: string;
+        image_url: string; // Added image_url to DTO
 }
 
 @Controller('templates')
@@ -33,14 +29,11 @@ export class TemplateController {
         constructor(private readonly templateService: TemplateService) {}
 
         @Post('add-template')
-        @UseInterceptors(FileInterceptor('image'))
         async createTemplate(
                 @Body() createTemplateDto: CreateTemplateDto,
-                @UploadedFile() file: Express.Multer.File,
                 @Request() req: AuthenticatedRequest
         ) {
                 console.log('Request Body:', createTemplateDto);
-                console.log('Uploaded File:', file);
 
                 const userId = req.user?.user_id;
                 if (!userId) {
@@ -48,10 +41,6 @@ export class TemplateController {
                                 'Không tìm thấy thông tin người dùng',
                                 HttpStatus.UNAUTHORIZED
                         );
-                }
-
-                if (!file) {
-                        throw new HttpException('Ảnh đại diện là bắt buộc', HttpStatus.BAD_REQUEST);
                 }
 
                 if (!createTemplateDto.name) {
@@ -75,6 +64,13 @@ export class TemplateController {
                         throw new HttpException('Trạng thái là bắt buộc', HttpStatus.BAD_REQUEST);
                 }
 
+                if (!createTemplateDto.image_url) {
+                        throw new HttpException(
+                                'URL ảnh đại diện là bắt buộc',
+                                HttpStatus.BAD_REQUEST
+                        );
+                }
+
                 const templateId = createTemplateDto.template_id;
                 if (templateId !== undefined && (isNaN(templateId) || templateId < 0)) {
                         throw new HttpException(
@@ -83,9 +79,6 @@ export class TemplateController {
                         );
                 }
 
-                // Chuyển đổi file thành base64, chỉ lưu chuỗi base64 thuần
-                const base64Image = file.buffer.toString('base64');
-
                 const newTemplate = await this.templateService.create({
                         template_id: templateId,
                         name: createTemplateDto.name,
@@ -93,19 +86,13 @@ export class TemplateController {
                         price,
                         category_id: categoryId,
                         status: createTemplateDto.status,
-                        image_url: base64Image, // Lưu chuỗi base64 thuần
+                        image_url: createTemplateDto.image_url, // Use the provided image_url
                 });
-
-                // Tái tạo data URI khi trả về cho client, giả định mặc định là image/png
-                const responseImageUrl = `data:image/png;base64,${base64Image}`;
 
                 return {
                         statusCode: HttpStatus.CREATED,
                         message: 'Mẫu đã được tạo thành công',
-                        data: {
-                                ...newTemplate,
-                                image_url: responseImageUrl, // Trả về data URI đầy đủ cho client
-                        },
+                        data: newTemplate,
                 };
         }
 
