@@ -2,8 +2,8 @@ import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn, JoinColumn } from 
 import { Role } from './role.entity';
 import { Cards } from './cards.entity';
 import { Payments } from './payments.entity';
-import { QR_Users } from './qr-users.entity'; 
-import { Error_Feedbacks } from './error-feedbacks.entity'; 
+import { QR_Users } from './qr-users.entity';
+import { Error_Feedbacks } from './error-feedbacks.entity';
 
 @Entity('Users')
 export class Users {
@@ -30,6 +30,14 @@ export class Users {
 
         @Column({ type: 'varchar', length: 255, nullable: false, comment: 'Mật khẩu (đã mã hóa)' })
         password: string;
+
+        @Column({
+                type: 'datetime',
+                nullable: false,
+                default: () => 'CURRENT_TIMESTAMP',
+                comment: 'Thời gian tạo tài khoản',
+        })
+        created_at: Date;
 
         @ManyToOne(() => Role, (role) => role.users, {
                 nullable: false,

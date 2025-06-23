@@ -165,6 +165,10 @@ export class AppModule implements NestModule {
                                 {
                                         path: 'error-feedback/user-feedbacks',
                                         method: RequestMethod.GET,
+},
+  {
+                                        path: 'users/check-discount-eligibility',
+                                        method: RequestMethod.GET,
                                 }
                         );
         }
@@ -331,6 +335,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 },
 //                                 {
 //                                         path: 'error-feedback/user-feedbacks',
+//                                         method: RequestMethod.GET,
+//                                 },
+//                                 {
+//                                         path: 'users/check-discount-eligibility',
 //                                         method: RequestMethod.GET,
 //                                 }
 //                         );
