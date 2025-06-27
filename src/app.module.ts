@@ -40,7 +40,7 @@ import { AuthUserLoginModule } from './modules/auth/login/login_user.module';
 import { CardModule } from './modules/card/card.module';
 import { PayOSModule } from './modules/payment/payos.module';
 import { QRModule } from './modules/QR_code/qr.module';
-import { ErrorFeedbackModule } from './modules/error-feedback/error-feedback.module';
+import { ErrorFeedbackModule } from './modules/feedback/error-feedback/error-feedback.module';
 import { UserFeedbackModule } from './modules/feedback/user-feedback/user-feedback.module';
 
 const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
