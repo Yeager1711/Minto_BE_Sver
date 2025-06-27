@@ -4,7 +4,7 @@ import { Cards } from './cards.entity';
 import { Payments } from './payments.entity';
 import { QR_Users } from './qr-users.entity';
 import { Error_Feedbacks } from './error-feedbacks.entity';
-
+import { Feedback_Users } from './feedback-users.entity';
 @Entity('Users')
 export class Users {
         @PrimaryColumn({ comment: 'Mã định danh người dùng' })
@@ -62,4 +62,7 @@ export class Users {
                 cascade: true, // Tùy chọn, cho phép cascade khi thêm/sửa phản hồi
         })
         errorFeedbacks: Error_Feedbacks[]; // Danh sách các phản hồi lỗi của người dùng
+        
+        @OneToMany(() => Feedback_Users, (feedback) => feedback.user)
+        feedbacks: Feedback_Users[];
 }

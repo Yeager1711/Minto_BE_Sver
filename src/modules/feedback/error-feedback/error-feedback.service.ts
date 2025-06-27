@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Error_Feedbacks } from '../../entities/error-feedbacks.entity';
-import { Users } from '../../entities/users.entity';
+import { Error_Feedbacks } from '../../../entities/error-feedbacks.entity';
+import { Users } from '../../../entities/users.entity';
 
 @Injectable()
 export class ErrorFeedbackService {

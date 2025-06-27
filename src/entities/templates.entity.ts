@@ -3,7 +3,7 @@ import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn, JoinColumn } from 
 import { Category } from './category.entity';
 import { Thumbnails } from './thumbnails.entity';
 import { Cards } from './cards.entity';
-
+import { Feedback_Users } from './feedback-users.entity';
 @Entity('Templates')
 export class Templates {
         @PrimaryColumn({
@@ -21,7 +21,7 @@ export class Templates {
 
         @Column({ type: 'longtext', nullable: false, comment: 'Ảnh đại diện của mẫu' })
         image_url: string;
-        
+
         @Column({
                 type: 'decimal',
                 precision: 10,
@@ -52,6 +52,9 @@ export class Templates {
 
         @OneToMany(() => Cards, (cards) => cards.template)
         cards: Cards[];
+
+        @OneToMany(() => Feedback_Users, (feedback) => feedback.template)
+        feedbacks: Feedback_Users[];
 
         // Hàm tạo ID ngẫu nhiên (dùng khi người dùng không cung cấp ID)
         static generateRandomId(): number {

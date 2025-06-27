@@ -25,6 +25,8 @@ import { Guests } from './entities/guests.entity';
 import { Payments } from './entities/payments.entity';
 import { QR_Users } from './entities/qr-users.entity';
 import { Error_Feedbacks } from './entities/error-feedbacks.entity';
+import { Feedback_Users } from './entities/feedback-users.entity';
+
 // Middleware
 import { AuthMiddleware } from './middlewares/auth/auth.middleware';
 import { ImageKitController } from './imagekit/imagekit.controller';
@@ -39,6 +41,7 @@ import { CardModule } from './modules/card/card.module';
 import { PayOSModule } from './modules/payment/payos.module';
 import { QRModule } from './modules/QR_code/qr.module';
 import { ErrorFeedbackModule } from './modules/error-feedback/error-feedback.module';
+import { UserFeedbackModule } from './modules/feedback/user-feedback/user-feedback.module';
 
 const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
 
@@ -68,6 +71,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                                 Payments,
                                 QR_Users,
                                 Error_Feedbacks,
+                                Feedback_Users,
                         ],
                         synchronize: true,
                         ssl: {
@@ -115,6 +119,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                 PayOSModule,
                 QRModule,
                 ErrorFeedbackModule,
+                UserFeedbackModule
         ],
         controllers: [ImageKitController], // Thêm ImageKitController vào đây
 })
@@ -166,10 +171,13 @@ export class AppModule implements NestModule {
                                         path: 'error-feedback/user-feedbacks',
                                         method: RequestMethod.GET,
                                 },
-                                
                                 {
                                         path: 'users/check-discount-eligibility',
                                         method: RequestMethod.GET,
+                                },
+                                {
+                                        path: 'user-feedback/submit',
+                                        method: RequestMethod.POST,
                                 }
                         );
         }
@@ -206,6 +214,7 @@ if (process.env.NODE_ENV !== 'production') {
 // import { Invitations } from './entities/invitations.entity';
 // import { Guests } from './entities/guests.entity';
 // import { Payments } from './entities/payments.entity';
+// import { Feedback_Users } from './entities/feedback-users.entity';
 
 // import { QR_Users } from './entities/qr-users.entity';
 // import { Error_Feedbacks } from './entities/error-feedbacks.entity';
@@ -222,7 +231,8 @@ if (process.env.NODE_ENV !== 'production') {
 // import { CardModule } from './modules/card/card.module';
 // import { PayOSModule } from './modules/payment/payos.module';
 // import { QRModule } from './modules/QR_code/qr.module';
-// import { ErrorFeedbackModule } from './modules/error-feedback/error-feedback.module';
+// import { ErrorFeedbackModule } from './modules/feedback/error-feedback/error-feedback.module';
+// import { UserFeedbackModule } from './modules/feedback/user-feedback/user-feedback.module';
 
 // // Controllers
 // import { ImageKitController } from './imagekit/imagekit.controller';
@@ -253,6 +263,7 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 Payments,
 //                                 QR_Users,
 //                                 Error_Feedbacks,
+//                                 Feedback_Users,
 //                         ],
 //                         synchronize: false,
 //                 }),
@@ -287,6 +298,7 @@ if (process.env.NODE_ENV !== 'production') {
 //                 PayOSModule,
 //                 QRModule,
 //                 ErrorFeedbackModule,
+//                 UserFeedbackModule,
 //         ],
 //         controllers: [ImageKitController],
 // })
@@ -341,6 +353,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 {
 //                                         path: 'users/check-discount-eligibility',
 //                                         method: RequestMethod.GET,
+//                                 },
+//                                 {
+//                                         path: 'user-feedback/submit',
+//                                         method: RequestMethod.POST,
 //                                 }
 //                         );
 //         }
