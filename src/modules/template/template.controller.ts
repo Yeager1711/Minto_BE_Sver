@@ -3,10 +3,11 @@ import {
         Post,
         Body,
         Get,
+        Patch,
+        Param,
         HttpStatus,
         HttpException,
         Request,
-        Param,
 } from '@nestjs/common';
 import { TemplateService } from './template.service';
 
@@ -16,12 +17,12 @@ interface AuthenticatedRequest extends Request {
 
 interface CreateTemplateDto {
         template_id?: number;
-        name: string;
+        name?: string;
         description?: string;
-        price: string;
-        category_id: string;
-        status: string;
-        image_url: string; // Added image_url to DTO
+        price?: string;
+        category_id?: string;
+        status?: string;
+        image_url?: string;
 }
 
 @Controller('templates')
@@ -33,8 +34,6 @@ export class TemplateController {
                 @Body() createTemplateDto: CreateTemplateDto,
                 @Request() req: AuthenticatedRequest
         ) {
-                console.log('Request Body:', createTemplateDto);
-
                 const userId = req.user?.user_id;
                 if (!userId) {
                         throw new HttpException(
@@ -47,16 +46,20 @@ export class TemplateController {
                         throw new HttpException('Tên mẫu là bắt buộc', HttpStatus.BAD_REQUEST);
                 }
 
-                const price = parseFloat(createTemplateDto.price);
-                if (isNaN(price) || price <= 0) {
+                const price = createTemplateDto.price
+                        ? parseFloat(createTemplateDto.price)
+                        : undefined;
+                if (price !== undefined && (isNaN(price) || price <= 0)) {
                         throw new HttpException(
                                 'Giá mẫu phải là số lớn hơn 0',
                                 HttpStatus.BAD_REQUEST
                         );
                 }
 
-                const categoryId = parseInt(createTemplateDto.category_id);
-                if (isNaN(categoryId)) {
+                const categoryId = createTemplateDto.category_id
+                        ? parseInt(createTemplateDto.category_id)
+                        : undefined;
+                if (categoryId !== undefined && isNaN(categoryId)) {
                         throw new HttpException('Danh mục không hợp lệ', HttpStatus.BAD_REQUEST);
                 }
 
@@ -83,16 +86,81 @@ export class TemplateController {
                         template_id: templateId,
                         name: createTemplateDto.name,
                         description: createTemplateDto.description,
-                        price,
-                        category_id: categoryId,
+                        price: price!,
+                        category_id: categoryId!,
                         status: createTemplateDto.status,
-                        image_url: createTemplateDto.image_url, // Use the provided image_url
+                        image_url: createTemplateDto.image_url,
                 });
 
                 return {
                         statusCode: HttpStatus.CREATED,
                         message: 'Mẫu đã được tạo thành công',
                         data: newTemplate,
+                };
+        }
+
+        @Patch('update-template/:template_id')
+        async updateTemplate(
+                @Param('template_id') template_id: string,
+                @Body() updateTemplateDto: CreateTemplateDto,
+                @Request() req: AuthenticatedRequest
+        ) {
+                const userId = req.user?.user_id;
+                if (!userId) {
+                        throw new HttpException(
+                                'Không tìm thấy thông tin người dùng',
+                                HttpStatus.UNAUTHORIZED
+                        );
+                }
+
+                const templateId = parseInt(template_id);
+                if (isNaN(templateId)) {
+                        throw new HttpException('Mã mẫu không hợp lệ', HttpStatus.BAD_REQUEST);
+                }
+
+                // Kiểm tra xem có ít nhất một trường được cung cấp
+                if (
+                        !updateTemplateDto.name &&
+                        !updateTemplateDto.description &&
+                        !updateTemplateDto.price &&
+                        !updateTemplateDto.category_id &&
+                        !updateTemplateDto.status
+                ) {
+                        throw new HttpException(
+                                'Cần cung cấp ít nhất một trường để cập nhật',
+                                HttpStatus.BAD_REQUEST
+                        );
+                }
+
+                const price = updateTemplateDto.price
+                        ? parseFloat(updateTemplateDto.price)
+                        : undefined;
+                if (price !== undefined && (isNaN(price) || price <= 0)) {
+                        throw new HttpException(
+                                'Giá mẫu phải là số lớn hơn 0',
+                                HttpStatus.BAD_REQUEST
+                        );
+                }
+
+                const categoryId = updateTemplateDto.category_id
+                        ? parseInt(updateTemplateDto.category_id)
+                        : undefined;
+                if (categoryId !== undefined && isNaN(categoryId)) {
+                        throw new HttpException('Danh mục không hợp lệ', HttpStatus.BAD_REQUEST);
+                }
+
+                const updatedTemplate = await this.templateService.update(templateId, {
+                        name: updateTemplateDto.name,
+                        description: updateTemplateDto.description,
+                        price,
+                        category_id: categoryId,
+                        status: updateTemplateDto.status,
+                });
+
+                return {
+                        statusCode: HttpStatus.OK,
+                        message: 'Cập nhật mẫu thiệp thành công',
+                        data: updatedTemplate,
                 };
         }
 
