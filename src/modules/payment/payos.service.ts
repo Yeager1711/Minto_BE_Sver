@@ -356,7 +356,6 @@ export class PayOSService {
                         let revenueQuery = this.paymentRepository
                                 .createQueryBuilder('payment')
                                 .select([
-                                        // Adjust to UTC+7 and extract date correctly
                                         "DATE(CONVERT_TZ(payment.payment_date, '+00:00', '+07:00')) as paymentDate",
                                         'SUM(payment.amount) as totalAmount',
                                 ])
@@ -387,43 +386,87 @@ export class PayOSService {
                                 ])
                                 .where('payment.status = :status', { status: 'CANCELLED' });
 
+                        // Chi tiết tất cả các thanh toán (bất kể trạng thái)
+                        let paymentsQuery = this.paymentRepository
+                                .createQueryBuilder('payment')
+                                .leftJoin('payment.card', 'card')
+                                .leftJoin('payment.user', 'user')
+                                .select([
+                                        'payment.payment_id as paymentId',
+                                        'payment.card_id as cardId',
+                                        'payment.user_id as userId',
+                                        'payment.amount as amount',
+                                        'payment.payment_date as paymentDate',
+                                        'payment.payment_method as paymentMethod',
+                                        'payment.status as status',
+                                        'payment.transaction_id as transactionId',
+                                ]);
+
                         // Thêm điều kiện thời gian nếu có
                         if (startDate) {
                                 const startDateAdjusted = `${startDate}T00:00:00.000Z`;
                                 revenueQuery = revenueQuery.andWhere(
                                         'payment.payment_date >= :startDate',
-                                        { startDate: startDateAdjusted }
+                                        {
+                                                startDate: startDateAdjusted,
+                                        }
                                 );
                                 canceledQuery = canceledQuery.andWhere(
                                         'payment.payment_date >= :startDate',
-                                        { startDate: startDateAdjusted }
+                                        {
+                                                startDate: startDateAdjusted,
+                                        }
                                 );
                                 completedPaymentsQuery = completedPaymentsQuery.andWhere(
                                         'payment.payment_date >= :startDate',
-                                        { startDate: startDateAdjusted }
+                                        {
+                                                startDate: startDateAdjusted,
+                                        }
                                 );
                                 canceledPaymentsQuery = canceledPaymentsQuery.andWhere(
                                         'payment.payment_date >= :startDate',
-                                        { startDate: startDateAdjusted }
+                                        {
+                                                startDate: startDateAdjusted,
+                                        }
+                                );
+                                paymentsQuery = paymentsQuery.andWhere(
+                                        'payment.payment_date >= :startDate',
+                                        {
+                                                startDate: startDateAdjusted,
+                                        }
                                 );
                         }
                         if (endDate) {
                                 const endDateAdjusted = `${endDate}T23:59:59.999Z`;
                                 revenueQuery = revenueQuery.andWhere(
                                         'payment.payment_date <= :endDate',
-                                        { endDate: endDateAdjusted }
+                                        {
+                                                endDate: endDateAdjusted,
+                                        }
                                 );
                                 canceledQuery = canceledQuery.andWhere(
                                         'payment.payment_date <= :endDate',
-                                        { endDate: endDateAdjusted }
+                                        {
+                                                endDate: endDateAdjusted,
+                                        }
                                 );
                                 completedPaymentsQuery = completedPaymentsQuery.andWhere(
                                         'payment.payment_date <= :endDate',
-                                        { endDate: endDateAdjusted }
+                                        {
+                                                endDate: endDateAdjusted,
+                                        }
                                 );
                                 canceledPaymentsQuery = canceledPaymentsQuery.andWhere(
                                         'payment.payment_date <= :endDate',
-                                        { endDate: endDateAdjusted }
+                                        {
+                                                endDate: endDateAdjusted,
+                                        }
+                                );
+                                paymentsQuery = paymentsQuery.andWhere(
+                                        'payment.payment_date <= :endDate',
+                                        {
+                                                endDate: endDateAdjusted,
+                                        }
                                 );
                         }
 
@@ -452,6 +495,9 @@ export class PayOSService {
                         const canceledPayments = await canceledPaymentsQuery
                                 .orderBy('payment.payment_date', 'DESC')
                                 .getRawMany();
+                        const payments = await paymentsQuery
+                                .orderBy('payment.payment_date', 'DESC')
+                                .getRawMany();
 
                         const completedPaymentsData = completedPayments.map((payment) => ({
                                 paymentId: payment.paymentId,
@@ -465,6 +511,17 @@ export class PayOSService {
                                 amount: parseFloat(payment.amount || 0),
                         }));
 
+                        const paymentsData = payments.map((payment) => ({
+                                paymentId: payment.paymentId,
+                                cardId: payment.cardId || null,
+                                userId: payment.userId || null,
+                                amount: parseFloat(payment.amount || 0),
+                                paymentDate: payment.paymentDate,
+                                paymentMethod: payment.paymentMethod || 'N/A',
+                                status: payment.status,
+                                transactionId: payment.transactionId || null,
+                        }));
+
                         // Tổng số template
                         const totalTemplateCount = await this.templatesRepository
                                 .createQueryBuilder('template')
@@ -476,6 +533,9 @@ export class PayOSService {
                                 .select([
                                         'template.template_id as templateId',
                                         'template.name as templateName',
+                                        'template.image_url as templateImage',
+                                        'template.price as templatePrice',
+                                        'template.status as templateStatus',
                                 ])
                                 .getRawMany();
 
@@ -486,9 +546,14 @@ export class PayOSService {
                                 .select([
                                         'template.template_id as templateId',
                                         'template.name as templateName',
+                                        'template.image_url as templateImage',
+                                        'template.price as templatePrice',
+                                        'template.status as templateStatus',
                                         'COUNT(card.card_id) as usageCount',
                                 ])
-                                .groupBy('template.template_id, template.name')
+                                .groupBy(
+                                        'template.template_id, template.name, template.image_url, template.price, template.status'
+                                )
                                 .orderBy('usageCount', 'DESC')
                                 .getRawMany();
 
@@ -497,6 +562,7 @@ export class PayOSService {
                                 canceledCount === 0 &&
                                 completedPaymentsData.length === 0 &&
                                 canceledPaymentsData.length === 0 &&
+                                paymentsData.length === 0 &&
                                 templateUsage.length === 0 &&
                                 totalTemplateCount === 0
                         ) {
@@ -508,15 +574,26 @@ export class PayOSService {
                                                 totalCanceledOrders: canceledCount,
                                                 completedPayments: completedPaymentsData,
                                                 canceledPayments: canceledPaymentsData,
+                                                payments: paymentsData,
                                                 totalTemplates: totalTemplateCount,
                                                 templateUsage: templateUsage.map((template) => ({
                                                         templateId: template.templateId,
                                                         templateName: template.templateName,
                                                         usageCount: parseInt(template.usageCount),
+                                                        templateImage: template.templateImage,
+                                                        templatePrice: parseFloat(
+                                                                template.templatePrice || 0
+                                                        ),
+                                                        templateStatus: template.templateStatus,
                                                 })),
                                                 allTemplates: allTemplates.map((template) => ({
                                                         templateId: template.templateId,
                                                         templateName: template.templateName,
+                                                        templateImage: template.templateImage,
+                                                        templatePrice: parseFloat(
+                                                                template.templatePrice || 0
+                                                        ),
+                                                        templateStatus: template.templateStatus,
                                                 })),
                                         },
                                 };
@@ -529,15 +606,26 @@ export class PayOSService {
                                         totalCanceledOrders: canceledCount,
                                         completedPayments: completedPaymentsData,
                                         canceledPayments: canceledPaymentsData,
+                                        payments: paymentsData,
                                         totalTemplates: totalTemplateCount,
                                         allTemplates: allTemplates.map((template) => ({
                                                 templateId: template.templateId,
                                                 templateName: template.templateName,
+                                                templateImage: template.templateImage,
+                                                templatePrice: parseFloat(
+                                                        template.templatePrice || 0
+                                                ),
+                                                templateStatus: template.templateStatus,
                                         })),
                                         templateUsage: templateUsage.map((template) => ({
                                                 templateId: template.templateId,
                                                 templateName: template.templateName,
                                                 usageCount: parseInt(template.usageCount),
+                                                templateImage: template.templateImage,
+                                                templatePrice: parseFloat(
+                                                        template.templatePrice || 0
+                                                ),
+                                                templateStatus: template.templateStatus,
                                         })),
                                 },
                         };

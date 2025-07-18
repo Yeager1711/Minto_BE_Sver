@@ -22,7 +22,10 @@ export class AuthUserController {
                 const { password, ...userWithoutPassword } = user;
                 return {
                         message: 'Đăng nhập thành công',
-                        user: userWithoutPassword,
+                        user: {
+                                ...userWithoutPassword,
+                                full_name: user.full_name,
+                        },
                         accessToken,
                 };
         }

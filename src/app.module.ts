@@ -119,7 +119,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                 PayOSModule,
                 QRModule,
                 ErrorFeedbackModule,
-                UserFeedbackModule,
+                UserFeedbackModule
         ],
         controllers: [ImageKitController], // Thêm ImageKitController vào đây
 })
@@ -178,8 +178,8 @@ export class AppModule implements NestModule {
                                 {
                                         path: 'user-feedback/submit',
                                         method: RequestMethod.POST,
-                                },
-                                {
+                                }
+ ,{
                                         path: 'templates/update-template/:template_id',
                                         method: RequestMethod.PATCH,
                                 }
