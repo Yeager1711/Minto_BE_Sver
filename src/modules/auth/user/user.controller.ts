@@ -12,12 +12,21 @@ import { Request } from 'express';
 import { UserService } from './user.service';
 
 interface AuthenticatedRequest extends Request {
-        user?: { user_id?: number; userId?: number; email?: string };
+        user?: { user_id?: number; userId?: number; email?: string; role?: string };
 }
 
 @Controller('users')
 export class UserController {
         constructor(private readonly userService: UserService) {}
+
+        @Get('all-users')
+        async getAllUsers(@Req() req: AuthenticatedRequest) {
+                if (!req.user || (!req.user.user_id && !req.user.userId)) {
+                        throw new UnauthorizedException('User not authenticated');
+                }
+
+                return this.userService.getAllUsers();
+        }
 
         @Get('profile')
         async getUserProfile(@Req() req: AuthenticatedRequest) {

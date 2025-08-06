@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Users } from '../../../entities/users.entity';
 import { LoginDto } from '../dto/login.dto';
+
 @Injectable()
 export class AuthUserService {
         constructor(
@@ -31,6 +32,7 @@ export class AuthUserService {
 
                 const payload = {
                         userId: user.user_id,
+                        role: user.role.name,
                 };
                 const accessToken = this.jwtService.sign(payload, { expiresIn: '30d' });
 

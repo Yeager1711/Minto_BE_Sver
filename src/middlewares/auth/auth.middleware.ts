@@ -31,9 +31,8 @@ export class AuthMiddleware implements NestMiddleware {
 
                         // Chuẩn hóa payload để gán vào req.user
                         req.user = {
-                                user_id: payload.user_id || payload.userId
+                                user_id: payload.user_id || payload.userId,
                         };
-                        console.log('Assigned req.user:', req.user);
                         next();
                 } catch (error) {
                         console.error('Token verification error:', error.message);

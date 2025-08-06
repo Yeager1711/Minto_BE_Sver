@@ -42,6 +42,7 @@ import { PayOSModule } from './modules/payment/payos.module';
 import { QRModule } from './modules/QR_code/qr.module';
 import { ErrorFeedbackModule } from './modules/feedback/error-feedback/error-feedback.module';
 import { UserFeedbackModule } from './modules/feedback/user-feedback/user-feedback.module';
+import { AI_Module } from './modules/auth/AI_reply/ai.module';
 
 const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
 
@@ -119,7 +120,8 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                 PayOSModule,
                 QRModule,
                 ErrorFeedbackModule,
-                UserFeedbackModule
+                UserFeedbackModule,
+                AI_Module,
         ],
         controllers: [ImageKitController], // Thêm ImageKitController vào đây
 })
@@ -178,10 +180,14 @@ export class AppModule implements NestModule {
                                 {
                                         path: 'user-feedback/submit',
                                         method: RequestMethod.POST,
-                                }
- ,{
+                                },
+                                {
                                         path: 'templates/update-template/:template_id',
                                         method: RequestMethod.PATCH,
+                                },
+                                {
+                                        path: 'ai/ask-minto',
+                                        method: RequestMethod.POST,
                                 }
                         );
         }
@@ -237,6 +243,7 @@ if (process.env.NODE_ENV !== 'production') {
 // import { QRModule } from './modules/QR_code/qr.module';
 // import { ErrorFeedbackModule } from './modules/feedback/error-feedback/error-feedback.module';
 // import { UserFeedbackModule } from './modules/feedback/user-feedback/user-feedback.module';
+// import { AI_Module } from './modules/auth/AI_reply/ai.module';
 
 // // Controllers
 // import { ImageKitController } from './imagekit/imagekit.controller';
@@ -303,6 +310,7 @@ if (process.env.NODE_ENV !== 'production') {
 //                 QRModule,
 //                 ErrorFeedbackModule,
 //                 UserFeedbackModule,
+//                 AI_Module,
 //         ],
 //         controllers: [ImageKitController],
 // })
@@ -330,6 +338,7 @@ if (process.env.NODE_ENV !== 'production') {
 //                         )
 //                         .forRoutes(
 //                                 { path: 'users/profile', method: RequestMethod.GET },
+//                                 { path: 'users/all-users', method: RequestMethod.GET },
 //                                 { path: 'categories/add-template', method: RequestMethod.POST },
 //                                 { path: 'templates/add-template', method: RequestMethod.POST },
 //                                 { path: 'cards/save-card', method: RequestMethod.POST },
@@ -365,6 +374,11 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 {
 //                                         path: 'templates/update-template/:template_id',
 //                                         method: RequestMethod.PATCH,
+//                                 },
+
+//                                 {
+//                                         path: 'ai/ask-minto',
+//                                         method: RequestMethod.POST,
 //                                 }
 //                         );
 //         }

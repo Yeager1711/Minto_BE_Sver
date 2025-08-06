@@ -26,11 +26,40 @@ export class UserService {
                 private readonly paymentsRepository: Repository<Payments>
         ) {}
 
+        async getAllUsers(): Promise<Users[]> {
+                const users = await this.userRepository.find({
+                        relations: ['role'],
+                        select: [
+                                'user_id',
+                                'full_name',
+                                'email',
+                                'phone',
+                                'address',
+                                'role',
+                                'created_at',
+                        ],
+                });
+
+                if (!users || users.length === 0) {
+                        throw new NotFoundException('No users found');
+                }
+
+                return users;
+        }
+
         async getUserProfile(userId: number): Promise<Users> {
                 const user = await this.userRepository.findOne({
                         where: { user_id: userId },
                         relations: ['role'],
-                        select: ['user_id', 'full_name', 'email', 'phone', 'address', 'role', 'created_at'],
+                        select: [
+                                'user_id',
+                                'full_name',
+                                'email',
+                                'phone',
+                                'address',
+                                'role',
+                                'created_at',
+                        ],
                 });
 
                 if (!user) {
@@ -71,7 +100,7 @@ export class UserService {
                 // Tìm user
                 const user = await this.userRepository.findOne({
                         where: { user_id: userId },
-                        select: ['user_id', 'created_at'], 
+                        select: ['user_id', 'created_at'],
                 });
 
                 if (!user) {
@@ -103,7 +132,7 @@ export class UserService {
 
                 // Kiểm tra thanh toán
                 const payment = await this.paymentsRepository.findOne({
-                        where: { user: {user_id: userId}, status: 'COMPLETED' },
+                        where: { user: { user_id: userId }, status: 'COMPLETED' },
                 });
 
                 if (payment) {
