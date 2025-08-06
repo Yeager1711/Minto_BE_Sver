@@ -100,7 +100,7 @@ export class AI_Service {
                 try {
                         const model = this.genAI.getGenerativeModel({
                                 model: 'gemini-1.5-flash-latest',
-                                generationConfig: { maxOutputTokens: 2000 },
+                                generationConfig: { maxOutputTokens: 1000 },
                         });
 
                         // Kiểm tra nếu câu hỏi chứa URL Google Maps
