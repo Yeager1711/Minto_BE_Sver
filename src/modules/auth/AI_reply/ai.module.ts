@@ -6,11 +6,12 @@ import { AI_Controller } from './ai.controller';
 import { AI_Service } from './ai.service';
 import { Users } from '../../../entities/users.entity';
 import { AuthModule } from '../register/auth.module';
+import { Templates } from 'src/entities/templates.entity';
 
 @Module({
         imports: [
                 ConfigModule.forRoot({ isGlobal: true }),
-                TypeOrmModule.forFeature([Users]),
+                TypeOrmModule.forFeature([Users, Templates]),
                 AuthModule,
         ],
         controllers: [AI_Controller],
