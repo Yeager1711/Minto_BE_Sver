@@ -39,6 +39,15 @@ export class AI_Service {
                 + Zalo: 0333 xxxx 892.
       - Kênh TikTok: https://www.tiktok.com/@minto_wedding?_t=ZS-8ye0pryjhSL&_r=1.
 
+        - Cách tạo thiệp cưới trên Minto:
+         + Chọn template yêu thích,
+         + Nhập thông tin cần thiết
+         + Lựa chọn ảnh đẹp nhất cho thiệp
+         + Tại button down: Nhập tên khách mời (lưu ý khách mời được nhập sẽ nằm trong danh sách khách mời)
+         + Tiến hành thanh toán
+         + Khi thanh toán thành công, nhấn nút hoàn thành (Điều này là bắt buộc vì không nhấn Hoàn Thành thiệp sẽ chưa được lưu)
+         + Vào sao danh sách khách mời, nhấn vào link để chia sẽ thiệp hoặc xem.
+          
       - Minto luôn áp dụng giảm 5% cho tất cả tài khoản lần đầu sử dụng. điều kiện được áp dụng là 7 ngày kể từ ngày đăng kí tài khoản.
 
       - Thiệp cưới khi thanh toán xong thì: hệ thống sẽ tạo ra phần danh sách trong đó có toàn bộ link mời cho khách mời đã thêm.
@@ -193,25 +202,32 @@ export class AI_Service {
         private async parseTemplateRequest(
                 userInput: string
         ): Promise<{ wantsTemplate: boolean; preferences: string }> {
+                // Quick heuristic: nếu người dùng hỏi "cách", "hướng dẫn", "quy trình", "làm sao" => coi là hỏi hướng dẫn, không phải yêu cầu gợi ý template
+                const guideKeywords = /(cách|hướng dẫn|quy trình|làm sao)/i;
+                if (guideKeywords.test(userInput)) {
+                        return { wantsTemplate: false, preferences: '' };
+                }
+
                 try {
                         const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
                         const prompt = `
-Bạn là một hệ thống phân tích yêu cầu tìm mẫu thiệp cưới.
-Trả về CHÍNH XÁC một JSON có cấu trúc:
-{
-  "wantsTemplate": boolean,   // true nếu người dùng muốn được gợi ý template (câu hỏi có ý định tìm/so sánh/gợi ý mẫu)
-  "preferences": string       // mô tả gu (màu, phong cách, chủ đề, cảm xúc, từ khóa...), rỗng nếu không có
-}
-**Chỉ trả JSON, KHÔNG giải thích.**
+                                Bạn là một hệ thống phân tích yêu cầu tìm mẫu thiệp cưới.
+                                Trả về CHÍNH XÁC một JSON có cấu trúc:
+                                {
+                                "wantsTemplate": boolean,   // true nếu người dùng muốn được gợi ý template (câu hỏi có ý định tìm/so sánh/gợi ý mẫu)
+                                "preferences": string       // mô tả gu (màu, phong cách, chủ đề, cảm xúc, từ khóa...), rỗng nếu không có
+                                }
+                                **Chỉ trả JSON, KHÔNG giải thích.**
 
-Ví dụ:
-"Có mẫu thiệp cổ điển nào không?" => {"wantsTemplate": true, "preferences":"phong cách cổ điển"}
-"Mình thích màu pastel, tối giản" => {"wantsTemplate": true, "preferences":"màu pastel, phong cách tối giản, nhẹ nhàng"}
-"Bạn có khuyến mãi không?" => {"wantsTemplate": false, "preferences":""}
-"Cho mình gợi ý mấy mẫu cho đám cưới biển" => {"wantsTemplate": true, "preferences":"chủ đề biển, màu xanh, lãng mạn"}
+                                Ví dụ:
+                                "Có mẫu thiệp cổ điển nào không?" => {"wantsTemplate": true, "preferences":"phong cách cổ điển"}
+                                "Mình thích màu pastel, tối giản" => {"wantsTemplate": true, "preferences":"màu pastel, phong cách tối giản, nhẹ nhàng"}
+                                "Bạn có khuyến mãi không?" => {"wantsTemplate": false, "preferences":""}
+                                "Cho mình gợi ý mấy mẫu cho đám cưới biển" => {"wantsTemplate": true, "preferences":"chủ đề biển, màu xanh, lãng mạn"}
+                                "Cách tạo thiệp cưới online" => {"wantsTemplate": false, "preferences":""}
 
-Câu cần phân tích: "${userInput.replace(/\n/g, ' ')}"
+                                Câu cần phân tích: "${userInput.replace(/\n/g, ' ')}"
 `;
 
                         const result = await model.generateContent(prompt);
