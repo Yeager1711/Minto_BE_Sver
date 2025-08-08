@@ -109,7 +109,7 @@ export class AI_Service {
                 const model = this.genAI.getGenerativeModel({
                         model: 'gemini-2.0-flash',
                         generationConfig: {
-                                maxOutputTokens: 1000,
+                                maxOutputTokens: 500,
                         },
                 });
 
@@ -263,24 +263,24 @@ Câu cần phân tích: "${userInput.replace(/\n/g, ' ')}"
                                 .join('\n');
 
                         const prompt = `
-Bạn là hệ thống gợi ý thiệp cưới. Mục tiêu: dựa trên mô tả gu của khách hàng, chọn tối đa 3 mẫu từ danh sách dưới đây phù hợp nhất.
-Danh sách template:
-${templateLines}
+                        Bạn là hệ thống gợi ý thiệp cưới. Mục tiêu: dựa trên mô tả gu của khách hàng, chọn tối đa 3 mẫu từ danh sách dưới đây phù hợp nhất.
+                        Danh sách template:
+                        ${templateLines}
 
-Mô tả gu khách hàng: "${preferences.replace(/\n/g, ' ')}"
+                        Mô tả gu khách hàng: "${preferences.replace(/\n/g, ' ')}"
 
-Yêu cầu:
-1) So sánh dựa trên phong cách, màu sắc chủ đạo, chủ đề và cảm giác tổng thể.
-2) Trả về một mảng JSON gồm tối đa 3 phần tử, mỗi phần tử có:
-   { "id": số, "name": "tên template", "reason": "ngắn gọn lý do tại sao phù hợp" }
-3) Xếp theo thứ tự phù hợp giảm dần (phần tử đầu phù hợp nhất).
-4) Chỉ trả JSON, không giải thích thêm.
+                        Yêu cầu:
+                        1) So sánh dựa trên phong cách, màu sắc chủ đạo, chủ đề và cảm giác tổng thể.
+                        2) Trả về một mảng JSON gồm tối đa 3 phần tử, mỗi phần tử có:
+                        { "id": số, "name": "tên template", "reason": "ngắn gọn lý do tại sao phù hợp" }
+                        3) Xếp theo thứ tự phù hợp giảm dần (phần tử đầu phù hợp nhất).
+                        4) Chỉ trả JSON, không giải thích thêm.
 
-Ví dụ output:
-[
-  { "id": 12, "name": "Mẫu Pastel Tối Giản", "reason": "Màu pastel, phong cách tối giản, nhẹ nhàng" },
-  ...
-]
+                        Ví dụ output:
+                        [
+                        { "id": 12, "name": "Mẫu Pastel Tối Giản", "reason": "Màu pastel, phong cách tối giản, nhẹ nhàng" },
+                        ...
+                        ]
 `;
 
                         const result = await model.generateContent(prompt);
