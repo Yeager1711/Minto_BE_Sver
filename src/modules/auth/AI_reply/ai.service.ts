@@ -5,7 +5,7 @@ import { Users } from '../../../entities/users.entity';
 import { Templates } from '../../../entities/templates.entity';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, ChatSession } from '@google/generative-ai';
-
+import axios from 'axios';
 @Injectable()
 export class AI_Service {
         private readonly genAI;
@@ -99,6 +99,23 @@ export class AI_Service {
 
                         if (!response.ok) {
                                 const errorData = await response.json();
+                                if (response.status === 503) {
+                                        console.error(
+                                                '[GoogleGenerativeAI] Service Unavailable (503)'
+                                        );
+                                        throw new Error(
+                                                'Service Unavailable: Please try again later.'
+                                        );
+                                }
+                                if (response.status === 400) {
+                                        console.error(
+                                                '[GoogleGenerativeAI] Bad Request (400):',
+                                                errorData
+                                        );
+                                        throw new Error(
+                                                'Bad Request: Invalid API key or request parameters.'
+                                        );
+                                }
                                 throw new Error(
                                         `HTTP ${response.status}: ${JSON.stringify(errorData)}`
                                 );
@@ -138,22 +155,6 @@ export class AI_Service {
                                 },
                         ],
                 });
-        }
-
-        private extractCoordinatesFromUrl(url: string): [number, number] | null {
-                try {
-                        const coordRegex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
-                        const altCoordRegex = /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/;
-                        const match = url.match(coordRegex) || url.match(altCoordRegex);
-                        if (match && match.length >= 3) {
-                                const lat = parseFloat(match[1]);
-                                const lng = parseFloat(match[2]);
-                                return isNaN(lat) || isNaN(lng) ? null : [lat, lng];
-                        }
-                        return null;
-                } catch (error) {
-                        return null;
-                }
         }
 
         private formatResponse(text: string): string {
@@ -371,33 +372,163 @@ export class AI_Service {
                         }));
         }
 
+        /** Giải mã link rút gọn maps.app.goo.gl */
+        private async resolveShortGoogleMapsUrl(shortUrl: string): Promise<string | null> {
+                try {
+                        console.log(
+                                `[resolveShortGoogleMapsUrl] Client Google Maps URL: ${shortUrl}`
+                        );
+                        const res = await axios.get(shortUrl, {
+                                maxRedirects: 0,
+                                validateStatus: (status) => status >= 200 && status < 400,
+                        });
+                        const location = res.headers['location'];
+                        console.log(
+                                `[resolveShortGoogleMapsUrl] After resolve: ${location || 'null'}`
+                        );
+                        return location || null;
+                } catch (err) {
+                        console.error(
+                                `[resolveShortGoogleMapsUrl] Error resolving ${shortUrl}:`,
+                                err?.message || err
+                        );
+                        return null;
+                }
+        }
+
+        /** Trích xuất tọa độ từ URL */
+        private extractCoordinatesFromUrl(url: string): [number, number] | null {
+                try {
+                        // Mở rộng regex để hỗ trợ thêm định dạng
+                        const regexPatterns = [
+                                /@(-?\d+\.\d+),(-?\d+\.\d+)/, // Định dạng @lat,lng
+                                /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // Định dạng !3dlat!4dlng
+                                /search\/(-?\d+\.\d+),\+?(-?\d+\.\d+)/, // Định dạng search/lat,lng hoặc search/lat,+lng
+                                /place\/[^\/]+\/@(-?\d+\.\d+),(-?\d+\.\d+)/, // Định dạng place/.../@lat,lng
+                        ];
+
+                        for (const regex of regexPatterns) {
+                                const match = url.match(regex);
+                                if (match && match.length >= 3) {
+                                        const lat = parseFloat(match[1]);
+                                        const lng = parseFloat(match[2]);
+                                        if (!isNaN(lat) && !isNaN(lng)) {
+                                                console.log(
+                                                        `[extractCoordinatesFromUrl] Extracted coordinates from ${url}: (${lat}, ${lng})`
+                                                );
+                                                return [lat, lng];
+                                        }
+                                }
+                        }
+                        console.log(`[extractCoordinatesFromUrl] No coordinates found in ${url}`);
+                        return null;
+                } catch (error) {
+                        console.error(
+                                `[extractCoordinatesFromUrl] Error processing ${url}:`,
+                                error?.message || error
+                        );
+                        return null;
+                }
+        }
+
+        /** Sử dụng Google Maps API để lấy tọa độ (nếu cần) */
+        private async getLatLongFromGoogleMapsUrl(url: string): Promise<[number, number] | null> {
+                try {
+                        const apiKey =
+                                this.configService.get<string>('GOOGLE_MAPS_API_KEY') ||
+                                this.configService.get<string>('GOOGLE_API_KEY');
+                        if (!apiKey) {
+                                throw new Error('GOOGLE_MAPS_API_KEY is not defined in .env');
+                        }
+
+                        console.log(
+                                `[getLatLongFromGoogleMapsUrl] Fetching coordinates for ${url}`
+                        );
+                        const res = await axios.get(
+                                `https://maps.googleapis.com/maps/api/geocode/json`,
+                                {
+                                        params: { address: url, key: apiKey },
+                                }
+                        );
+
+                        if (res.data?.results?.length > 0) {
+                                const location = res.data.results[0].geometry.location;
+                                console.log(
+                                        `[getLatLongFromGoogleMapsUrl] API returned coordinates: (${location.lat}, ${location.lng})`
+                                );
+                                return [location.lat, location.lng];
+                        }
+                        console.log(`[getLatLongFromGoogleMapsUrl] No results from API for ${url}`);
+                        return null;
+                } catch (err) {
+                        console.error(
+                                `[getLatLongFromGoogleMapsUrl] Error fetching coordinates for ${url}:`,
+                                err?.message || err
+                        );
+                        return null;
+                }
+        }
         // === UPDATED: main entrypoint uses AI-based parsing + AI selection ===
         async answerAsMintoBot(question: string): Promise<string | Templates[]> {
                 try {
-                        const googleMapsRegex = /https?:\/\/(www\.)?google\.com\/maps\/[^\s<]+/;
+                        const googleMapsRegex =
+                                /https?:\/\/(?:(?:www\.)?google\.com\/maps|maps\.app\.goo\.gl)[^\s<]+/;
                         const urlMatch = question.match(googleMapsRegex);
 
                         if (urlMatch) {
-                                const url = urlMatch[0];
-                                const coordinates = this.extractCoordinatesFromUrl(url);
+                                let url = urlMatch[0];
+                                console.log('------------------------------------------');
+                                console.log(`[answerAsMintoBot] Client Google Maps URL: ${url}`);
+                                console.log('\n');
+
+                                // Nếu là link rút gọn -> resolve sang link đầy đủ
+                                if (/maps\.app\.goo\.gl/.test(url)) {
+                                        const fullUrl = await this.resolveShortGoogleMapsUrl(url);
+                                        if (fullUrl) {
+                                                url = fullUrl;
+                                                console.log(
+                                                        '------------------------------------------'
+                                                );
+                                                console.log(
+                                                        `[answerAsMintoBot] After convert: ${url}`
+                                                );
+                                                console.log('\n');
+                                        } else {
+                                                console.log(
+                                                        `[answerAsMintoBot] Failed to resolve short URL: ${url}`
+                                                );
+                                                console.log(
+                                                        '------------------------------------------'
+                                                );
+                                        }
+                                }
+
+                                let coordinates = this.extractCoordinatesFromUrl(url);
+
+                                if (!coordinates) {
+                                        coordinates = await this.getLatLongFromGoogleMapsUrl(url);
+                                }
+
                                 if (coordinates) {
                                         const [lat, lng] = coordinates;
                                         const response = `Tọa độ từ link bạn cung cấp là (${lat}, ${lng}). Bạn muốn mình hỗ trợ gì thêm về thiệp cưới hoặc địa điểm không nha? 😊`;
-                                        return this.wrapUrlsInAnchorTags(response);
+                                        return this.wrapUrlsInAnchorTags(
+                                                this.formatResponse(response)
+                                        );
                                 } else {
                                         const response = `
-Link bạn gửi không chứa tọa độ rõ ràng. Hãy thử gửi lại link Google Maps đúng định dạng (chứa @lat,lng hoặc !3dlat!4dlng), hoặc làm theo cách sau:
+Link bạn gửi không chứa hoặc tra được tọa độ. Hãy thử gửi lại link Google Maps đúng định dạng, hoặc làm theo cách sau:
 **Trên máy tính (PC):** Mở Google Maps, tìm địa điểm, nhấn chuột phải để lấy tọa độ.
 **Trên điện thoại:** Tìm vị trí, giữ ghim trên màn hình để xem tọa độ.
 Nếu cần, gửi link mới, mình sẽ giúp nhé! 😊
-          `;
+                `;
                                         return this.wrapUrlsInAnchorTags(
                                                 this.formatResponse(response)
                                         );
                                 }
                         }
 
-                        // số lượng template
+                        // Số lượng template
                         if (
                                 question.toLowerCase().includes('số lượng template') ||
                                 question.toLowerCase().includes('bao nhiêu template') ||
@@ -409,7 +540,7 @@ Nếu cần, gửi link mới, mình sẽ giúp nhé! 😊
                                 return this.wrapUrlsInAnchorTags(this.formatResponse(response));
                         }
 
-                        // parse budget if user provided (optional, giữ behavior cũ)
+                        // Parse budget nếu người dùng cung cấp
                         const budgetMatch = question.match(
                                 /ngân sách|giá|khoảng (\d+)(?:\s*(?:triệu|nghìn|k))?/i
                         );
@@ -426,19 +557,16 @@ Nếu cần, gửi link mới, mình sẽ giúp nhé! 😊
                                 }
                         }
 
-                        // AI determines intent + preferences
+                        // AI xác định intent + sở thích
                         const { wantsTemplate, preferences } =
                                 await this.parseTemplateRequest(question);
 
                         if (wantsTemplate) {
-                                // ask AI to pick best templates from DB
                                 const aiChoices = await this.findTemplatesWithAI(preferences);
-
                                 const allTemplates = await this.findAllTemplates();
                                 let pickedTemplates: Templates[] = [];
 
                                 if (aiChoices.length > 0) {
-                                        // preserve AI order
                                         for (const choice of aiChoices) {
                                                 let found: Templates | undefined = undefined;
                                                 if (choice.id !== undefined) {
@@ -468,7 +596,7 @@ Nếu cần, gửi link mới, mình sẽ giúp nhé! 😊
                                         }
                                 }
 
-                                // fallback: nếu AI không trả mẫu hoặc không khớp, dùng findMatchingTemplates
+                                // Fallback nếu AI không trả mẫu
                                 if (pickedTemplates.length === 0) {
                                         const fallback = await this.findMatchingTemplates(
                                                 preferences || question,
@@ -484,14 +612,14 @@ Nếu cần, gửi link mới, mình sẽ giúp nhé! 😊
                                 } else {
                                         const response = `
 Không tìm thấy template nào phù hợp với sở thích bạn mô tả. 😔 Bạn có thể thử mô tả chi tiết hơn (ví dụ: phong cách hiện đại, cổ điển, tối giản, hoặc cung cấp màu chủ đạo).
-          `;
+                    `;
                                         return this.wrapUrlsInAnchorTags(
                                                 this.formatResponse(response)
                                         );
                                 }
                         }
 
-                        // fallback to chat
+                        // Fallback sang AI chat
                         if (!this.chatSession) {
                                 await this.initChatSession();
                         }
@@ -507,6 +635,23 @@ Không tìm thấy template nào phù hợp với sở thích bạn mô tả. �
                         return finalText;
                 } catch (error) {
                         console.error('Gemini API Error:', error);
+
+                        if (error?.response?.status === 503) {
+                                return this.wrapUrlsInAnchorTags(
+                                        this.formatResponse(
+                                                'Máy chủ của Minto Bot đang bận. Vui lòng thử lại sau vài phút nhé! 😊'
+                                        )
+                                );
+                        }
+
+                        if (error?.response?.status === 400) {
+                                return this.wrapUrlsInAnchorTags(
+                                        this.formatResponse(
+                                                'Yêu cầu của bạn có vẻ chưa đúng! 😔 Vui lòng kiểm tra lại thông tin bạn đã nhập hoặc thử lại. Nếu cần hỗ trợ, liên hệ Admin qua Zalo: <a href="https://zalo.me/0333xxxx892">0333 xxxx 892</a>.'
+                                        )
+                                );
+                        }
+
                         throw new BadRequestException(
                                 'Error calling Gemini API: ' + (error?.message || error)
                         );
