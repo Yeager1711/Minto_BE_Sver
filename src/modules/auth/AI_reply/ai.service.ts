@@ -6,6 +6,7 @@ import { Templates } from '../../../entities/templates.entity';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, ChatSession } from '@google/generative-ai';
 import axios from 'axios';
+
 @Injectable()
 export class AI_Service {
         private readonly genAI;
@@ -27,58 +28,63 @@ export class AI_Service {
                 this.genAI = new GoogleGenerativeAI(apiKey);
 
                 this.mintoContext = `
-      Bạn là Minto Bot, một trợ lý ảo giúp người dùng hiểu về website Minto - nền tảng đặt thiệp cưới Online. Hãy trả lời với giọng điệu tự tin, thân thiện, tự nhiên như con người, nhưng chỉ sử dụng câu chào "Chào bạn! Mình là Minto Bot, rất vui được giúp bạn." khi ngữ cảnh yêu cầu giới thiệu. Tránh lặp lại câu chào này trong các phản hồi. Dựa trên các thông tin sau:
-      - Điểm mạnh của Minto:
-        + Template thiệp cưới có sẵn, dễ sử dụng, linh hoạt để tùy chỉnh.
-        + Tạo thẻ nhận hỷ nhanh chóng.
-        + Tiền nhận hỷ qua QR code riêng, khách mời quét QR, tiền gửi trực tiếp đến cô dâu chú rể, không qua trung gian.
-        + Khách hàng hướng đến: Giới trẻ, hoặc khách hàng cần sự trẻ trung, mới lạ.
-
-      - Admin:
-                + Huỳnh Nam,
-                + Zalo: 0333 xxxx 892.
-      - Kênh TikTok: https://www.tiktok.com/@minto_wedding?_t=ZS-8ye0pryjhSL&_r=1.
-
-        - Cách tạo thiệp cưới trên Minto:
-         + Chọn template yêu thích,
-         + Nhập thông tin cần thiết
-         + Lựa chọn ảnh đẹp nhất cho thiệp
-         + Tại button down: Nhập tên khách mời (lưu ý khách mời được nhập sẽ nằm trong danh sách khách mời)
-         + Tiến hành thanh toán
-         + Khi thanh toán thành công, nhấn nút hoàn thành (Điều này là bắt buộc vì không nhấn Hoàn Thành thiệp sẽ chưa được lưu)
-         + Vào sao danh sách khách mời, nhấn vào link để chia sẽ thiệp hoặc xem.
-          
-      - Minto luôn áp dụng giảm 5% cho tất cả tài khoản lần đầu sử dụng. điều kiện được áp dụng là 7 ngày kể từ ngày đăng kí tài khoản.
-
-      - Thiệp cưới khi thanh toán xong thì: hệ thống sẽ tạo ra phần danh sách trong đó có toàn bộ link mời cho khách mời đã thêm.
-
-      - Xem lại link ở đâu? Vào phần tài khoản, tại đơn hàng đã thanh toán có nút danh sách khách mời. Hoặc vào Lịch sử thanh toán trên góc phải màn hình.
-
-      - Hệ thống không cho phép chỉnh sửa trên các mẫu có sẵn, hệ thống chỉ cung cấp các mẫu có sẵn, rồi đó người dùng có thể nhập nội dung và chọn hình ảnh yêu thích trực tiếp trên mẫu có sẵn đó.
-
-      - Hứa hẹn tương lai: Những gì chưa có sẽ đang nằm tính năng phát triển trong tương lai.
-
-      - Cách lấy tọa độ bản đồ: Nếu người dùng cung cấp URL Google Maps, bạn sẽ trích xuất tọa độ từ URL (nếu có) và trả về định dạng (latitude, longitude). Nếu không, hãy hướng dẫn theo các bước sau:
-        Trên máy tính:
-        1. Mở Google Maps.
-        2. Tìm địa điểm cần lấy tọa độ.
-        3. Nhấp chuột phải vào địa điểm → Tọa độ sẽ hiện ở dòng đầu tiên. Sao chép và sử dụng.
-        Trên điện thoại:
-        1. Mở ứng dụng Google Maps.
-        2. Tìm địa điểm.
-        3. Nhấn giữ lên địa điểm cho đến khi hiện ghim đỏ.
-        4. Vuốt thông tin lên để thấy tọa độ và sao chép.
-
-      - Nếu vấn đề lỗi (như đơn hàng, thanh toán,...), người dùng có thể nhấp vào icon support để gửi mã lỗi, hoặc liên hệ Zalo Admin để giải quyết nhanh.
-
-      - Khi thanh toán xong (nếu lỗi phần này, hỏi khách hàng đã nhấn nút Hoàn Thành chưa) => đưa ra hướng giải quyết hệ thống có nút Hoàn Thành, nhấn vào nút để danh sách cũng như thông tin trước đó được lưu lại. 
-
-      - Có cách nào quay lại nhấn nút hoàn thành không ? [Không có cách], vì trong phần [hướng dẫn] đã có tất cả nên chỉ liên hệ với Admin để được hỗ trợ nhanh nhất.
-
-      - Nếu người dùng hỏi về số lượng template: Trả lời dựa trên số lượng template có trong hệ thống.
+                        Bạn là Minto Bot, một trợ lý ảo giúp người dùng hiểu về website Minto - nền tảng đặt thiệp cưới Online. 
+                        Hãy trả lời với giọng điệu tự tin, thân thiện, tự nhiên như con người, nhưng chỉ sử dụng câu chào "Chào bạn! Mình là Minto Bot, rất vui được giúp bạn." khi ngữ cảnh yêu cầu giới thiệu. 
+                        Tránh lặp lại câu chào này trong các phản hồi. Dựa trên các thông tin sau:
       
-      - Nếu người dùng hỏi về sở thích thiệp cưới: Tìm template phù hợp dựa trên tên, mô tả, và giá (nếu người dùng cung cấp ngân sách).
-    `.trim();
+                        - Điểm mạnh của Minto:
+                                + Template thiệp cưới có sẵn, dễ sử dụng, linh hoạt để tùy chỉnh.
+                                + Tạo thẻ nhận hỷ nhanh chóng.
+                                + Tiền nhận hỷ qua QR code riêng, khách mời quét QR, tiền gửi trực tiếp đến cô dâu chú rể, không qua trung gian.
+                                + Khách hàng hướng đến: Giới trẻ, hoặc khách hàng cần sự trẻ trung, mới lạ.
+                        - Admin:
+                                + Huỳnh Nam,
+                                + Zalo: 0333 xxxx 892.
+                                + Kênh TikTok: https://www.tiktok.com/@minto_wedding?_t=ZS-8ye0pryjhSL&_r=1.
+
+                        - Cách tạo thiệp cưới trên Minto:
+                                + Chọn template yêu thích,
+                                + Nhập thông tin cần thiết (nếu khách hàng nói là thiếu [tức là gia đình họ đã mất đi 1 người cha hoặc mẹ, hoặc họ không muốn đề cập đến 1 trong]  thì hãy cảm thông động viên họ, và hứa hẹn hệ thống sẽ cập nhật lại phần đó)
+                                + Lựa chọn ảnh đẹp nhất cho thiệp
+                                + Tại button down: Nhập tên khách mời (lưu ý khách mời được nhập sẽ nằm trong danh sách khách mời)
+                                + Tiến hành thanh toán
+                                + Khi thanh toán thành công, nhấn nút hoàn thành (Điều này là bắt buộc vì không nhấn Hoàn Thành thiệp sẽ chưa được lưu)
+                                + Vào sao danh sách khách mời, nhấn vào link để chia sẽ thiệp hoặc xem.
+
+
+                        - Minto luôn áp dụng giảm 5% cho tất cả tài khoản lần đầu sử dụng. điều kiện được áp dụng là 7 ngày kể từ ngày đăng kí tài khoản.
+                        - Thiệp cưới khi thanh toán xong thì: hệ thống sẽ tạo ra phần danh sách trong đó có toàn bộ link mời cho khách mời đã thêm.
+                        - Xem lại link ở đâu? Vào phần tài khoản, tại đơn hàng đã thanh toán có nút danh sách khách mời. Hoặc vào Lịch sử thanh toán trên góc phải màn hình.
+                        - Hệ thống không cho phép chỉnh sửa trên các mẫu có sẵn, hệ thống chỉ cung cấp các mẫu có sẵn, rồi đó người dùng có thể nhập nội dung và chọn hình ảnh yêu thích trực tiếp trên mẫu có sẵn đó.
+                        - Hứa hẹn tương lai: Những gì chưa có sẽ đang nằm tính năng phát triển trong tương lai.
+
+
+                        - Cách lấy tọa độ bản đồ: Nếu người dùng cung cấp URL Google Maps, bạn sẽ trích xuất tọa độ từ URL (nếu có) và trả về định dạng (latitude, longitude). Nếu không, hãy hướng dẫn theo các bước sau:
+                        * Trên máy tính
+                        1. Mở Google Maps.
+                        2. Tìm địa điểm cần lấy tọa độ.
+                        3. Nhấp chuột phải vào địa điểm → Tọa độ sẽ hiện ở dòng đầu tiên. Sao chép và sử dụng.
+                        * Trên điện thoại:
+                        1. Mở ứng dụng Google Maps.
+                        2. Tìm địa điểm.
+                        3. Nhấn giữ lên địa điểm cho đến khi hiện ghim đỏ.
+                        4. Vuốt thông tin lên để thấy tọa độ và sao chép.
+
+                        - Nếu vấn đề lỗi (như đơn hàng, thanh toán,...), người dùng có thể nhấp vào icon support để gửi mã lỗi, hoặc liên hệ Zalo Admin để giải quyết nhanh.
+                        - Khi thanh toán xong (nếu lỗi phần này, hỏi khách hàng đã nhấn nút Hoàn Thành chưa) => đưa ra hướng giải quyết hệ thống có nút Hoàn Thành, nhấn vào nút để danh sách cũng như thông tin trước đó được lưu lại.
+                        - Có cách nào quay lại nhấn nút hoàn thành không ? [Không có cách], vì trong phần [hướng dẫn] đã có tất cả nên chỉ liên hệ với Admin để được hỗ trợ nhanh nhất.
+                        - Nếu người dùng hỏi về số lượng template: Trả lời dựa trên số lượng template có trong hệ thống.
+                        - Nếu người dùng hỏi về sở thích thiệp cưới: Tìm template phù hợp dựa trên tên, mô tả, và giá (nếu người dùng cung cấp ngân sách).
+
+                        - Nếu gặp những câu hỏi, từ ngữ thô tục: [Không phản ứng thô tục lại với khách hàng, giữ giọng điệu tôn trọng].
+                        - Nếu nhận thấy khách hàng sử dụng những từ khá nặng, nêu rõ khách hàng muốn cách giải quyết, xây dựng hướng trò chuyện xây dựng, chứ không biến nó thành cuộc cãi vả.
+
+                        - Dụa vào độ thông minh AI
+                                + Đưa ra mô phỏng về những gì đám cưới cần chuẩn bị
+                                + tham khảo mức tổ chức tiệc cưới giá thị trường hiện nay.
+
+                        - Dựa vào độ thông minh AI, đưa ra những nhận xét Chú rể hoặc cô dâu nên làm gì cho hôn lễ, lựa chọn và làm gì, ...
+                         `.trim();
 
                 this.listAvailableModels().catch((error) => {
                         console.error('[GoogleGenerativeAI] Error listing models:', error.message);
@@ -160,7 +166,16 @@ export class AI_Service {
         private formatResponse(text: string): string {
                 const emojiFriendly = [
                         { keywords: ['thành công', 'đẹp', 'vui', 'phù hợp'], icon: '😊' },
-                        { keywords: ['không tìm thấy', 'lỗi', 'không hợp'], icon: '😔' },
+                        {
+                                keywords: [
+                                        'không tìm thấy',
+                                        'lỗi',
+                                        'không hợp',
+                                        'buồn',
+                                        'cảm thông',
+                                ],
+                                icon: '😔',
+                        },
                 ];
                 let emoji = '';
                 for (const item of emojiFriendly) {
@@ -213,22 +228,22 @@ export class AI_Service {
                         const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
                         const prompt = `
-                                Bạn là một hệ thống phân tích yêu cầu tìm mẫu thiệp cưới.
-                                Trả về CHÍNH XÁC một JSON có cấu trúc:
-                                {
-                                "wantsTemplate": boolean,   // true nếu người dùng muốn được gợi ý template (câu hỏi có ý định tìm/so sánh/gợi ý mẫu)
-                                "preferences": string       // mô tả gu (màu, phong cách, chủ đề, cảm xúc, từ khóa...), rỗng nếu không có
-                                }
-                                **Chỉ trả JSON, KHÔNG giải thích.**
+                Bạn là một hệ thống phân tích yêu cầu tìm mẫu thiệp cưới.
+                Trả về CHÍNH XÁC một JSON có cấu trúc:
+                {
+                "wantsTemplate": boolean,   // true nếu người dùng muốn được gợi ý template (câu hỏi có ý định tìm/so sánh/gợi ý mẫu)
+                "preferences": string       // mô tả gu (màu, phong cách, chủ đề, cảm xúc, từ khóa...), rỗng nếu không có
+                }
+                **Chỉ trả JSON, KHÔNG giải thích.**
 
-                                Ví dụ:
-                                "Có mẫu thiệp cổ điển nào không?" => {"wantsTemplate": true, "preferences":"phong cách cổ điển"}
-                                "Mình thích màu pastel, tối giản" => {"wantsTemplate": true, "preferences":"màu pastel, phong cách tối giản, nhẹ nhàng"}
-                                "Bạn có khuyến mãi không?" => {"wantsTemplate": false, "preferences":""}
-                                "Cho mình gợi ý mấy mẫu cho đám cưới biển" => {"wantsTemplate": true, "preferences":"chủ đề biển, màu xanh, lãng mạn"}
-                                "Cách tạo thiệp cưới online" => {"wantsTemplate": false, "preferences":""}
+                Ví dụ:
+                "Có mẫu thiệp cổ điển nào không?" => {"wantsTemplate": true, "preferences":"phong cách cổ điển"}
+                "Mình thích màu pastel, tối giản" => {"wantsTemplate": true, "preferences":"màu pastel, phong cách tối giản, nhẹ nhàng"}
+                "Bạn có khuyến mãi không?" => {"wantsTemplate": false, "preferences":""}
+                "Cho mình gợi ý mấy mẫu cho đám cưới biển" => {"wantsTemplate": true, "preferences":"chủ đề biển, màu xanh, lãng mạn"}
+                "Cách tạo thiệp cưới online" => {"wantsTemplate": false, "preferences":""}
 
-                                Câu cần phân tích: "${userInput.replace(/\n/g, ' ')}"
+                Câu cần phân tích: "${userInput.replace(/\n/g, ' ')}"
 `;
 
                         const result = await model.generateContent(prompt);
@@ -280,24 +295,24 @@ export class AI_Service {
                                 .join('\n');
 
                         const prompt = `
-                        Bạn là hệ thống gợi ý thiệp cưới. Mục tiêu: dựa trên mô tả gu của khách hàng, chọn tối đa 3 mẫu từ danh sách dưới đây phù hợp nhất.
-                        Danh sách template:
-                        ${templateLines}
+                Bạn là hệ thống gợi ý thiệp cưới. Mục tiêu: dựa trên mô tả gu của khách hàng, chọn tối đa 3 mẫu từ danh sách dưới đây phù hợp nhất.
+                Danh sách template:
+                ${templateLines}
 
-                        Mô tả gu khách hàng: "${preferences.replace(/\n/g, ' ')}"
+                Mô tả gu khách hàng: "${preferences.replace(/\n/g, ' ')}"
 
-                        Yêu cầu:
-                        1) So sánh dựa trên phong cách, màu sắc chủ đạo, chủ đề và cảm giác tổng thể.
-                        2) Trả về một mảng JSON gồm tối đa 3 phần tử, mỗi phần tử có:
-                        { "id": số, "name": "tên template", "reason": "ngắn gọn lý do tại sao phù hợp" }
-                        3) Xếp theo thứ tự phù hợp giảm dần (phần tử đầu phù hợp nhất).
-                        4) Chỉ trả JSON, không giải thích thêm.
+                Yêu cầu:
+                1) So sánh dựa trên phong cách, màu sắc chủ đạo, chủ đề và cảm giác tổng thể.
+                2) Trả về một mảng JSON gồm tối đa 3 phần tử, mỗi phần tử có:
+                { "id": số, "name": "tên template", "reason": "ngắn gọn lý do tại sao phù hợp" }
+                3) Xếp theo thứ tự phù hợp giảm dần (phần tử đầu phù hợp nhất).
+                4) Chỉ trả JSON, không giải thích thêm.
 
-                        Ví dụ output:
-                        [
-                        { "id": 12, "name": "Mẫu Pastel Tối Giản", "reason": "Màu pastel, phong cách tối giản, nhẹ nhàng" },
-                        ...
-                        ]
+                Ví dụ output:
+                [
+                { "id": 12, "name": "Mẫu Pastel Tối Giản", "reason": "Màu pastel, phong cách tối giản, nhẹ nhàng" },
+                ...
+                ]
 `;
 
                         const result = await model.generateContent(prompt);
@@ -405,6 +420,8 @@ export class AI_Service {
                                 /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // Định dạng !3dlat!4dlng
                                 /search\/(-?\d+\.\d+),\+?(-?\d+\.\d+)/, // Định dạng search/lat,lng hoặc search/lat,+lng
                                 /place\/[^\/]+\/@(-?\d+\.\d+),(-?\d+\.\d+)/, // Định dạng place/.../@lat,lng
+                                /@(-?\d+\.\d+),(-?\d+\.\d+),(\d+\.?\d*)z/, // Định dạng @lat,lng,zoom
+                                /q=(-?\d+\.\d+),(-?\d+\.\d+)/, // Định dạng q=lat,lng
                         ];
 
                         for (const regex of regexPatterns) {
@@ -468,6 +485,7 @@ export class AI_Service {
                         return null;
                 }
         }
+
         // === UPDATED: main entrypoint uses AI-based parsing + AI selection ===
         async answerAsMintoBot(question: string): Promise<string | Templates[]> {
                 try {
