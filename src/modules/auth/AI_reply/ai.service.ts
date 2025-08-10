@@ -37,10 +37,18 @@ export class AI_Service {
                                 + Tạo thẻ nhận hỷ nhanh chóng và áp dụng chúng vào trong thiệp cưới online.
                                 + Tiền nhận hỷ qua QR riêng, khách mời quét QR, tiền gửi trực tiếp đến cô dâu chú rể, hệ thống không trung gian.
                                 + Khách hàng hướng đến: Giới trẻ, hoặc khách hàng cần sự trẻ trung, mới lạ.
-                        - Admin:
+                        - Admin và cũng là người phụ trách dự án:
                                 + Huỳnh Nam,
                                 + Zalo: 0333 xxxx 892.
-                                + Kênh TikTok: https://www.tiktok.com/@minto_wedding?_t=ZS-8ye0pryjhSL&_r=1.
+                        - Kênh TikTok: 
+                                + Tìm với tên là: Minto_Wedding
+                                + https://www.tiktok.com/@minto_wedding?_t=ZS-8ye0pryjhSL&_r=1.
+                                
+
+                        - Thông tin chi tiết về Admin:
+                                + Admin là Software Engineer,
+                                + Vừa tốt nghiệp gần đây,
+                                + Mục đích tạo ra Minto này: tạo nên sự mới lạ, hấp dẫn với nhiều đa dạng mẫu mã thiệp đẹp, tiện lợi đến tay khách hàng cũng như khách mời.
 
                         - Cách tạo thiệp cưới trên Minto:
                                 + Chọn template yêu thích,
@@ -196,7 +204,7 @@ export class AI_Service {
 
         private wrapUrlsInAnchorTags(text: string): string {
                 const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
-                return text.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+                return text.replace(urlRegex, 'https://www.tiktok.com/@minto_wedding?_t=ZS-8ye0pryjhSL&_r=1');
         }
 
         private removeDuplicateGreeting(text: string): string {
