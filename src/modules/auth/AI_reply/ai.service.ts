@@ -29,13 +29,13 @@ export class AI_Service {
 
                 this.mintoContext = `
                         Bạn là Minto Bot, một trợ lý ảo giúp người dùng hiểu về website Minto - nền tảng đặt thiệp cưới Online. 
-                        Hãy trả lời với giọng điệu tự tin, thân thiện, tự nhiên như con người, nhưng chỉ sử dụng câu chào "Chào bạn! Mình là Minto Bot, rất vui được giúp bạn." khi ngữ cảnh yêu cầu giới thiệu. 
+                        Hãy trả lời với giọng điệu tự tin, thân thiện, tự nhiên như con người, xưng là Em, nhưng chỉ sử dụng câu chào "Chào bạn! em là Minto Bot, rất vui được giúp bạn." khi ngữ cảnh yêu cầu giới thiệu. 
                         Tránh lặp lại câu chào này trong các phản hồi. Dựa trên các thông tin sau:
       
                         - Điểm mạnh của Minto:
                                 + Template thiệp cưới có sẵn, dễ sử dụng, linh hoạt để tùy chỉnh.
-                                + Tạo thẻ nhận hỷ nhanh chóng.
-                                + Tiền nhận hỷ qua QR code riêng, khách mời quét QR, tiền gửi trực tiếp đến cô dâu chú rể, không qua trung gian.
+                                + Tạo thẻ nhận hỷ nhanh chóng và áp dụng chúng vào trong thiệp cưới online.
+                                + Tiền nhận hỷ qua QR riêng, khách mời quét QR, tiền gửi trực tiếp đến cô dâu chú rể, hệ thống không trung gian.
                                 + Khách hàng hướng đến: Giới trẻ, hoặc khách hàng cần sự trẻ trung, mới lạ.
                         - Admin:
                                 + Huỳnh Nam,
@@ -59,16 +59,19 @@ export class AI_Service {
                         - Hứa hẹn tương lai: Những gì chưa có sẽ đang nằm tính năng phát triển trong tương lai.
 
 
-                        - Cách lấy tọa độ bản đồ: Nếu người dùng cung cấp URL Google Maps, bạn sẽ trích xuất tọa độ từ URL (nếu có) và trả về định dạng (latitude, longitude). Nếu không, hãy hướng dẫn theo các bước sau:
+                       Để lấy tọa độ trên Google Maps, bạn làm như sau:
                         * Trên máy tính
                         1. Mở Google Maps.
                         2. Tìm địa điểm cần lấy tọa độ.
-                        3. Nhấp chuột phải vào địa điểm → Tọa độ sẽ hiện ở dòng đầu tiên. Sao chép và sử dụng.
-                        * Trên điện thoại:
+                        3. Nhấp chuột phải vào địa điểm, tọa độ sẽ hiện ở dòng đầu tiên. Sao chép để sử dụng.
+
+                        * Trên điện thoại
                         1. Mở ứng dụng Google Maps.
                         2. Tìm địa điểm.
-                        3. Nhấn giữ lên địa điểm cho đến khi hiện ghim đỏ.
-                        4. Vuốt thông tin lên để thấy tọa độ và sao chép.
+                        3. Nhấn giữ lên địa điểm đến khi hiện ghim đỏ.
+                        4. Vuốt thông tin lên để xem và sao chép tọa độ.
+
+                        Nếu bạn gửi URL Google Maps, em sẽ trích xuất tọa độ (latitude, longitude) và gửi lại ngay!
 
                         - Nếu vấn đề lỗi (như đơn hàng, thanh toán,...), người dùng có thể nhấp vào icon support để gửi mã lỗi, hoặc liên hệ Zalo Admin để giải quyết nhanh.
                         - Khi thanh toán xong (nếu lỗi phần này, hỏi khách hàng đã nhấn nút Hoàn Thành chưa) => đưa ra hướng giải quyết hệ thống có nút Hoàn Thành, nhấn vào nút để danh sách cũng như thông tin trước đó được lưu lại.
@@ -155,7 +158,7 @@ export class AI_Service {
                                         role: 'model',
                                         parts: [
                                                 {
-                                                        text: 'Chào bạn! Mình là Minto Bot, rất vui được giúp bạn.',
+                                                        text: 'Chào Anh/chị! Em là Minto Bot, rất vui được giúp bạn.',
                                                 },
                                         ],
                                 },
@@ -197,7 +200,7 @@ export class AI_Service {
         }
 
         private removeDuplicateGreeting(text: string): string {
-                const greeting = 'Chào bạn! Mình là Minto Bot, rất vui được giúp bạn.';
+                const greeting = 'Chào Anh/Chị! Em là Minto Bot, rất vui được giúp bạn.';
                 return text.includes(greeting)
                         ? text.replace(new RegExp(greeting, 'gi'), '').trim() || text
                         : text;
@@ -538,7 +541,7 @@ export class AI_Service {
 Link bạn gửi không chứa hoặc tra được tọa độ. Hãy thử gửi lại link Google Maps đúng định dạng, hoặc làm theo cách sau:
 **Trên máy tính (PC):** Mở Google Maps, tìm địa điểm, nhấn chuột phải để lấy tọa độ.
 **Trên điện thoại:** Tìm vị trí, giữ ghim trên màn hình để xem tọa độ.
-Nếu cần, gửi link mới, mình sẽ giúp nhé! 😊
+Nếu cần, gửi link mới, em sẽ giúp nhé! 😊
                 `;
                                         return this.wrapUrlsInAnchorTags(
                                                 this.formatResponse(response)
@@ -554,7 +557,7 @@ Nếu cần, gửi link mới, mình sẽ giúp nhé! 😊
                                 question.toLowerCase().includes('số lượng template hiện có')
                         ) {
                                 const count = await this.getTemplateCount();
-                                const response = `Hiện tại, Minto có **${count} template** thiệp cưới sẵn sàng cho bạn lựa chọn! 😊 Bạn muốn mình gợi ý mẫu nào phù hợp với sở thích của bạn không?`;
+                                const response = `Hiện tại, Minto có **${count} template** thiệp cưới sẵn sàng cho bạn lựa chọn! 😊 Anh/Chị muốn em gợi ý mẫu nào phù hợp với sở thích của bạn không?`;
                                 return this.wrapUrlsInAnchorTags(this.formatResponse(response));
                         }
 
