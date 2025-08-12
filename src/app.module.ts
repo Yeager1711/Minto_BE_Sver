@@ -145,7 +145,11 @@ export class AppModule implements NestModule {
                                         method: RequestMethod.GET,
                                 },
 
-                                { path: 'qr/public/qrs/:userId', method: RequestMethod.GET }
+                                { path: 'qr/public/qrs/:userId', method: RequestMethod.GET },
+                                {
+                                        path: 'user-feedback/all-user-feedback',
+                                        method: RequestMethod.GET,
+                                }
                         )
                         .forRoutes(
                                 { path: 'users/profile', method: RequestMethod.GET },
@@ -334,7 +338,11 @@ if (process.env.NODE_ENV !== 'production') {
 //                                         method: RequestMethod.GET,
 //                                 },
 
-//                                 { path: 'qr/public/qrs/:userId', method: RequestMethod.GET }
+//                                 { path: 'qr/public/qrs/:userId', method: RequestMethod.GET },
+//                                 {
+//                                         path: 'user-feedback/all-user-feedback',
+//                                         method: RequestMethod.GET,
+//                                 }
 //                         )
 //                         .forRoutes(
 //                                 { path: 'users/profile', method: RequestMethod.GET },
