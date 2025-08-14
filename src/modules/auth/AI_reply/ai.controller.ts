@@ -1,4 +1,3 @@
-// ai.controller.ts
 import {
         Controller,
         Post,
@@ -20,7 +19,6 @@ export class AI_Controller {
 
         @Post('ask-minto')
         async askMintoBot(@Body('question') question: string, @Req() req: AuthenticatedRequest) {
-                // Kiểm tra xác thực (nếu cần)
                 if (!req.user || !req.user.user_id) {
                         throw new UnauthorizedException('User not authenticated');
                 }
@@ -29,8 +27,20 @@ export class AI_Controller {
                         throw new BadRequestException('Question is required');
                 }
 
-                // Gọi service để lấy câu trả lời từ Gemini
-                const response = await this.aiService.answerAsMintoBot(question);
+                const response = await this.aiService.answerAsMintoBot(
+                        req.user.user_id.toString(),
+                        question
+                );
                 return { response };
+        }
+
+        @Post('end-session')
+        async endSession(@Req() req: AuthenticatedRequest) {
+                if (!req.user || !req.user.user_id) {
+                        throw new UnauthorizedException('User not authenticated');
+                }
+
+                await this.aiService.endChatSession(req.user.user_id.toString());
+                return { message: 'Session ended' };
         }
 }

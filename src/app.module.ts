@@ -193,6 +193,11 @@ export class AppModule implements NestModule {
                                         path: 'ai/ask-minto',
                                         method: RequestMethod.POST,
                                 }
+,
+                                {
+                                        path: 'ai/end-session',
+                                        method: RequestMethod.POST,
+                                }
                         );
         }
 }
@@ -386,6 +391,10 @@ if (process.env.NODE_ENV !== 'production') {
 
 //                                 {
 //                                         path: 'ai/ask-minto',
+//                                         method: RequestMethod.POST,
+//                                 },
+//                                 {
+//                                         path: 'ai/end-session',
 //                                         method: RequestMethod.POST,
 //                                 }
 //                         );
