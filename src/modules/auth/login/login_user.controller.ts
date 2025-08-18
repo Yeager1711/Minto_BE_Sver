@@ -29,4 +29,10 @@ export class AuthUserController {
                         accessToken,
                 };
         }
+
+        @Post('google')
+        @HttpCode(HttpStatus.OK)
+        async loginWithGoogle(@Body('id_token') idToken: string) {
+                return this.authUserService.loginWithGoogle(idToken);
+        }
 }

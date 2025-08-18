@@ -38,6 +38,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "firebase": "^11.7.3",
+    "google-auth-library": "^10.2.1",
     "imagekit": "^6.0.0",
     "imagekit-javascript": "^4.0.1",
     "ioredis": "^5.7.0",
