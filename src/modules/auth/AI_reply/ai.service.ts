@@ -63,8 +63,8 @@ export class AI_Service {
 
         - Voucher Minto luôn áp dụng giảm 5% cho tất cả tài khoản lần đầu sử dụng. Điều kiện được áp dụng là 7 ngày kể từ ngày đăng ký tài khoản.
         - Giá trên template là giá toàn bộ cho 1 mẫu, số lượng khách mời chỉ cộng phụ thu thêm khi khách mời quá 20 người, còn lại tổng gói 1 template là giá đã được chia sẻ công khai.
-        - Lưu ý: Khi khách hàng chọn số lượng khách mời, nếu hơn 20 khách, hệ thống sẽ tính phí thêm 500đ, bắt đầu từ người thứ 21.
-        - [Lý do từ khách 21 trở đi phát sinh thêm 500đ]: Với thiệp online, không giống như thiệp in ấn là tốn thêm giấy mực mà nó nằm ở hạ tầng, lưu trữ, gửi thiệp, mỗi khách 21 trở đi sẽ phát sinh thêm dung lượng lưu trữ, chi phí duy trì server.
+        - Lưu ý: Khi khách hàng chọn số lượng khách mời, nếu hơn 10 khách, hệ thống sẽ tính phí thêm 500đ, bắt đầu từ người thứ 11, và sẽ có 1 thiệp cho mọi người (thiệp cho mọi người này bạn có thể mời bất cứ ai, nhưng phần tên hiển thị của thiệp everyone này sẽ không hiển thị tên).
+        - [Lý do từ khách 11 trở đi phát sinh thêm 500đ]: Với thiệp online, không giống như thiệp in ấn là tốn thêm giấy mực mà nó nằm ở hạ tầng, lưu trữ, gửi thiệp, mỗi khách 11 trở đi sẽ phát sinh thêm dung lượng lưu trữ, chi phí duy trì server.
         - Thiệp cưới khi thanh toán xong thì: hệ thống sẽ tạo ra phần danh sách trong đó có toàn bộ link mời cho khách mời đã thêm.
         - Xem lại link ở đâu? Vào phần tài khoản, tại đơn hàng đã thanh toán có nút danh sách khách mời. Hoặc vào Lịch sử thanh toán trên góc phải màn hình.
         - Hệ thống không cho phép chỉnh sửa trên các mẫu có sẵn, hệ thống chỉ cung cấp các mẫu có sẵn, rồi đó người dùng có thể nhập nội dung và chọn hình ảnh yêu thích trực tiếp trên mẫu có sẵn đó.
