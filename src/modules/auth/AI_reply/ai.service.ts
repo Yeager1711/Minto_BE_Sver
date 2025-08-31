@@ -84,6 +84,8 @@ export class AI_Service {
                 + Đưa ra mô phỏng về những gì đám cưới cần chuẩn bị.
                 + Tham khảo mức tổ chức tiệc cưới giá thị trường hiện nay.
                 + Đưa ra những nhận xét chú rể hoặc cô dâu nên làm gì cho hôn lễ, lựa chọn và làm gì, ...
+        - Đang có chương trình khuyến mãi mừng dịp đại lễ Quốc Khánh 2 tháng 9. Trong lần này, Min to sẽ giảm giá tất cả đồng giá các thiệp cưới Online có trên Minto, giảm 10% cho tất cả khi thanh toán. Chương trình này áp dụng từ 00:00 ngày 1/9 đến 12h ngày 3/9. 
+        - Đối với các khách hàng đang trong thời hạn áp dụng vourcher 7 ngày vẫn sẽ được áp dụng chương trình này.
         `.trim();
 
                 this.listAvailableModels().catch((error) => {
