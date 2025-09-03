@@ -25,6 +25,10 @@ interface CreateTemplateDto {
         image_url?: string;
 }
 
+interface UpdateAllPricesDto {
+        price: string;
+}
+
 @Controller('templates')
 export class TemplateController {
         constructor(private readonly templateService: TemplateService) {}
@@ -161,6 +165,32 @@ export class TemplateController {
                         statusCode: HttpStatus.OK,
                         message: 'Cập nhật mẫu thiệp thành công',
                         data: updatedTemplate,
+                };
+        }
+
+        @Patch('update-all-prices')
+        async updateAllPrices(
+                @Body() updateAllPricesDto: UpdateAllPricesDto,
+                @Request() req: AuthenticatedRequest
+        ) {
+                const userId = req.user?.user_id;
+                if (!userId) {
+                        throw new HttpException(
+                                'Không tìm thấy thông tin người dùng',
+                                HttpStatus.UNAUTHORIZED
+                        );
+                }
+
+                const price = parseFloat(updateAllPricesDto.price);
+                if (isNaN(price) || price <= 0) {
+                        throw new HttpException('Giá phải là số lớn hơn 0', HttpStatus.BAD_REQUEST);
+                }
+
+                await this.templateService.updateAllPrices(price);
+
+                return {
+                        statusCode: HttpStatus.OK,
+                        message: 'Cập nhật giá cho tất cả mẫu thiệp thành công',
                 };
         }
 

@@ -153,7 +153,7 @@ export class AppModule implements NestModule {
                         )
                         .forRoutes(
                                 { path: 'users/profile', method: RequestMethod.GET },
-{ path: 'users/all-users', method: RequestMethod.GET },
+                                { path: 'users/all-users', method: RequestMethod.GET },
                                 { path: 'categories/add-template', method: RequestMethod.POST },
                                 { path: 'templates/add-template', method: RequestMethod.POST },
                                 { path: 'cards/save-card', method: RequestMethod.POST },
@@ -197,6 +197,10 @@ export class AppModule implements NestModule {
                                 {
                                         path: 'ai/end-session',
                                         method: RequestMethod.POST,
+                                },
+                                {
+                                        path: 'templates/update-all-prices',
+                                        method: RequestMethod.PATCH,
                                 }
                         );
         }
@@ -396,6 +400,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 {
 //                                         path: 'ai/end-session',
 //                                         method: RequestMethod.POST,
+//                                 },
+//                                 {
+//                                         path: 'templates/update-all-prices',
+//                                         method: RequestMethod.PATCH,
 //                                 }
 //                         );
 //         }

@@ -98,6 +98,12 @@ export class AI_Service {
                                 + giảm thêm 10% khi thanh toán trong thời gian (1/9 00:00 – 3/9 12:00).  
                         - Nếu khách hàng còn trong hạn voucher 7 ngày → vẫn áp dụng thêm khuyến mãi song song.  
 
+                        - Đang triển khai và sắp tính năng phân loại thiệp cưới: Cá nhân Hóa và Thiệp chung. 
+                                + Thiệp cưới cá nhân hóa là những thiệp cũ Minto có sẵn (cho phép nhập nội dung hình ảnh theo sở thích, và có tên khách mời)
+                                + Thiệp cưới chung sẽ là Thiệp được bên Minto thiết kế mẫu, anh chị thích mẫu nào thì liên hệ với admin để được cập nhật nội dung chính xác hơn.
+                                + Ưu điểm khi tách ra là như nào ? 
+                                        + ưu điểm: Giá thiệp sẽ rẻ hơn so với thiệp cá nhân hóa, vẫn nhận QR như cũ.... Thiệp chung sẽ có nhiều mẫu để lựa chọn hơn....
+                                        + Nhược điểm: Nếu anh chị thích mẫu nào sẽ phải liên hệ zalo admin để gởi nội dung và hình ảnh, ....
                 8. Hứa hẹn
                         - Những tính năng chưa có hiện tại → sẽ được phát triển trong tương lai.  
 
@@ -431,8 +437,10 @@ export class AI_Service {
                                         )
                                 );
                         }
-                        throw new BadRequestException(
-                                'Error calling Gemini API: ' + (error?.message || error)
+                        return this.wrapUrlsInAnchorTags(
+                                this.formatResponse(
+                                        'Xin lỗi 😔, hiện tại Minto Bot gặp sự cố khi kết nối đến máy chủ. Anh/Chị vui lòng thử lại sau nhé!'
+                                )
                         );
                 }
         }

@@ -93,7 +93,7 @@ export class TemplateService {
                 // Kiểm tra template tồn tại
                 const template = await this.templateRepository.findOne({
                         where: { template_id },
-                        relations: ['category'], // Load category to keep existing value if not updated
+                        relations: ['category'],
                 });
                 if (!template) {
                         throw new HttpException('Không tìm thấy mẫu thiệp', HttpStatus.NOT_FOUND);
@@ -139,7 +139,7 @@ export class TemplateService {
                                                 : template.description,
                                 price: templateData.price ?? template.price,
                                 status: templateData.status ?? template.status,
-                                category: category ?? template.category, // Use new category if provided, else keep existing
+                                category: category ?? template.category,
                         });
 
                         // Lấy lại template sau khi cập nhật
@@ -158,6 +158,17 @@ export class TemplateService {
                 } catch (error) {
                         throw new HttpException(
                                 'Lỗi khi cập nhật mẫu thiệp',
+                                HttpStatus.INTERNAL_SERVER_ERROR
+                        );
+                }
+        }
+
+        async updateAllPrices(price: number): Promise<void> {
+                try {
+                        await this.templateRepository.update({}, { price });
+                } catch (error) {
+                        throw new HttpException(
+                                'Lỗi khi cập nhật giá cho tất cả mẫu thiệp',
                                 HttpStatus.INTERNAL_SERVER_ERROR
                         );
                 }
