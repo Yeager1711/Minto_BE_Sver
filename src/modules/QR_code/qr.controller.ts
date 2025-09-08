@@ -54,10 +54,16 @@ export class QRController {
                 return this.qrService.getPublicQrsByUser(userId);
         }
 
+        // New endpoint to fetch all QR codes for a userId (no auth required)
+        @Get('all-qrs/:userId')
+        async getAllQrsByUser(@Param('userId', ParseIntPipe) userId: number) {
+                return this.qrService.getQrsByUser(userId); // Reuse the existing service method
+        }
+
         @Patch(':qrId/status')
         @HttpCode(200)
         async updateQrStatus(
-                @Param('qrId', ParseIntPipe) qrId: number, 
+                @Param('qrId', ParseIntPipe) qrId: number,
                 @Body('status') status: 'SUCCESS' | 'ACTIVE',
                 @Req() req: AuthenticatedRequest
         ) {
@@ -70,6 +76,6 @@ export class QRController {
                                 'Trạng thái không hợp lệ. Phải là SUCCESS hoặc ACTIVE.'
                         );
                 }
-                return this.qrService.updateQrStatus(userId, status); // Pass only userId and status
+                return this.qrService.updateQrStatus(userId, status);
         }
 }
