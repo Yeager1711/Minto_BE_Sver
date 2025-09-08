@@ -102,15 +102,16 @@ export class AI_Service {
 
             7. Thông tin bổ sung
                 - AI có thể gợi ý mô phỏng việc chuẩn bị đám cưới, tham khảo giá thị trường, đưa lời khuyên cho cô dâu chú rể.    
-                   - Chương trình khuyến mãi Quốc Khánh 2/9: (đã kết thúc)
-                                + giảm đồng giá tất cả thiệp Online còn 149k,
-                                + giảm thêm 10% khi thanh toán trong thời gian (1/9 00:00 – 3/9 12:00).  
-                        - Nếu khách hàng còn trong hạn voucher 7 ngày → vẫn áp dụng thêm khuyến mãi song song.  
+                        - Chương trình khuyến mãi Quốc Khánh 2/9: (đã kết thúc)
+                                        + giảm đồng giá tất cả thiệp Online còn 149k,
+                                        + giảm thêm 10% khi thanh toán trong thời gian (1/9 00:00 – 3/9 12:00).  
+                                - Nếu khách hàng còn trong hạn voucher 7 ngày → vẫn áp dụng thêm khuyến mãi song song.  
 
-                          - Chương trình khuyến mãi Tri ân khách hàng Minto 9/9 
-                                + giảm đồng giá tất cả thiệp Online còn 149k,
-                                + giảm thêm 10% khi thanh toán trong thời gian (9/9 00:00 - 23:59 ngày 9/9/2025).  
-                        - Nếu khách hàng còn trong hạn voucher 7 ngày → vẫn áp dụng thêm khuyến mãi song song.  
+                        - Chương trình khuyến mãi Tri ân khách hàng Minto 09/09/2025. 
+                                        + giảm đồng giá tất cả thiệp Online còn 149k,
+                                        + giảm thêm 10% khi thanh toán trong thời gian (9/9/2025 00:00 - 23:59 ngày 9/9/2025).  
+                                - Nếu khách hàng còn trong hạn voucher 7 ngày → vẫn áp dụng thêm khuyến mãi song song.  
+
                 - Đang triển khai và sắp tính năng phân loại thiệp cưới: Cá nhân Hóa và Thiệp chung. 
                     + Thiệp cưới cá nhân hóa là những thiệp cũ Minto có sẵn (cho phép nhập nội dung hình ảnh theo sở thích, và có tên khách mời)
                     + Thiệp cưới chung sẽ là Thiệp được bên Minto thiết kế mẫu, anh chị thích mẫu nào thì liên hệ với admin để được cập nhật nội dung chính xác hơn.
