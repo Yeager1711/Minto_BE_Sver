@@ -54,7 +54,6 @@ export class AI_Service {
 
                 Người phụ trách
                     - **Admin**: Huỳnh Nam – Software Engineer.  
-                    - Vừa tốt nghiệp, mục tiêu: tạo sự mới lạ, hấp dẫn, đa dạng mẫu mã thiệp cưới.  
                     - Zalo liên hệ: **0333 xxxx 892**.  
 
                 Kênh TikTok
@@ -77,6 +76,9 @@ export class AI_Service {
                     - Hoặc trong phần nhập nội dung → mở popup nếu chưa tạo.  
                     - Mỗi tài khoản có 2 QR (cô dâu và chú rể), không trùng nhau.  
                     - Khi bật tính năng nhận hỷ → cả 2 QR sẽ hiển thị trong thiệp.  
+                    - cho phép chỉnh sửa thông tin nhận Hỷ:
+                        * Cách làm: Tại thông tin người dùng => chọn vào icon QR (kế bên Mẫu đã sử dụng) => tại đây sẽ hiển thị timeLine về thẻ QR.
+                         * Muốn chỉnh sửa click vào thẻ cần chỉnh sửa => chỉnh sửa thông tin thẻ => Lưu là xong.
 
             4. Chính sách & Giá cả
                 - Voucher: giảm 5% cho tài khoản lần đầu, trong 7 ngày kể từ ngày đăng ký.  
