@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { QR_Users } from '../../entities/qr-users.entity';
 
 @Injectable()
@@ -171,5 +171,90 @@ export class QRService {
                         status: qr.status,
                         representative: qr.representative,
                 }));
+        }
+
+        async updateQr(
+                userId: number,
+                qrId: number,
+                qrData: {
+                        bank?: string;
+                        accountNumber?: string;
+                        accountHolder?: string;
+                        qrCodeUrl?: string;
+                        representative?: string;
+                }
+        ) {
+                const qr = await this.qrUsersRepository.findOne({
+                        where: { qr_id: qrId, user: { user_id: userId } },
+                });
+
+                if (!qr) {
+                        throw new NotFoundException(
+                                'Không tìm thấy mã QR hoặc bạn không có quyền sửa đổi'
+                        );
+                }
+
+                // Kiểm tra các trường được cập nhật
+                if (qrData.accountNumber) {
+                        if (
+                                qrData.accountNumber.length < 6 ||
+                                qrData.accountNumber.length > 20 ||
+                                !/^\d+$/.test(qrData.accountNumber)
+                        ) {
+                                throw new BadRequestException(
+                                        'Số tài khoản phải có từ 6 đến 20 chữ số'
+                                );
+                        }
+
+                        // Kiểm tra số tài khoản trùng với cùng ngân hàng
+                        const existingQr = await this.qrUsersRepository.findOne({
+                                where: {
+                                        bank: qrData.bank || qr.bank, // Sử dụng ngân hàng mới nếu có, nếu không thì dùng ngân hàng hiện tại
+                                        account_number: qrData.accountNumber,
+                                        qr_id: Not(qrId), // Loại trừ mã QR hiện tại
+                                },
+                        });
+
+                        if (existingQr) {
+                                throw new BadRequestException(
+                                        'Số tài khoản đã được sử dụng với ngân hàng này'
+                                );
+                        }
+                }
+
+                if (qrData.accountHolder) {
+                        if (
+                                qrData.accountHolder.length < 3 ||
+                                !/^[A-Za-z\s]+$/.test(qrData.accountHolder)
+                        ) {
+                                throw new BadRequestException(
+                                        'Tên chủ tài khoản không hợp lệ, chỉ được chứa chữ cái và khoảng trắng'
+                                );
+                        }
+                }
+
+                if (qrData.qrCodeUrl && !qrData.qrCodeUrl) {
+                        throw new BadRequestException('URL mã QR không được để trống');
+                }
+
+                // Cập nhật các trường được cung cấp, giữ nguyên status
+                qr.bank = qrData.bank || qr.bank;
+                qr.account_number = qrData.accountNumber || qr.account_number;
+                qr.account_holder = qrData.accountHolder || qr.account_holder;
+                qr.qr_code_url = qrData.qrCodeUrl || qr.qr_code_url;
+                qr.representative = qrData.representative || qr.representative;
+
+                const updatedQr = await this.qrUsersRepository.save(qr);
+
+                return {
+                        qrId: updatedQr.qr_id,
+                        bank: updatedQr.bank,
+                        accountNumber: updatedQr.account_number,
+                        accountHolder: updatedQr.account_holder,
+                        qrCodeUrl: updatedQr.qr_code_url,
+                        createdAt: updatedQr.created_at,
+                        status: updatedQr.status,
+                        representative: updatedQr.representative,
+                };
         }
 }

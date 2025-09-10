@@ -78,4 +78,25 @@ export class QRController {
                 }
                 return this.qrService.updateQrStatus(userId, status);
         }
+
+        @Patch('edit/:qrId')
+        @HttpCode(200)
+        async updateQr(
+                @Param('qrId', ParseIntPipe) qrId: number,
+                @Body()
+                body: {
+                        bank?: string;
+                        accountNumber?: string;
+                        accountHolder?: string;
+                        qrCodeUrl?: string;
+                        representative?: string;
+                },
+                @Req() req: AuthenticatedRequest
+        ) {
+                const userId = req.user?.user_id;
+                if (!userId) {
+                        throw new Error('User ID not found in request');
+                }
+                return this.qrService.updateQr(userId, qrId, body);
+        }
 }
