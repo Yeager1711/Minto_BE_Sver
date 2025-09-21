@@ -48,6 +48,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
 
 @Module({
         imports: [
+                
                 ScheduleModule.forRoot(),
                 ConfigModule.forRoot({
                         isGlobal: true,
