@@ -43,12 +43,12 @@ import { QRModule } from './modules/QR_code/qr.module';
 import { ErrorFeedbackModule } from './modules/feedback/error-feedback/error-feedback.module';
 import { UserFeedbackModule } from './modules/feedback/user-feedback/user-feedback.module';
 import { AI_Module } from './modules/auth/AI_reply/ai.module';
+import { DynamicModule } from './modules/dynamic/dynamic.module';
 
 const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
 
 @Module({
         imports: [
-                
                 ScheduleModule.forRoot(),
                 ConfigModule.forRoot({
                         isGlobal: true,
@@ -123,6 +123,7 @@ const uploadDir = join(__dirname, '..', 'Uploads', 'templates');
                 ErrorFeedbackModule,
                 UserFeedbackModule,
                 AI_Module,
+                DynamicModule,
         ],
         controllers: [ImageKitController], // Thêm ImageKitController vào đây
 })
@@ -206,7 +207,9 @@ export class AppModule implements NestModule {
                                 {
                                         path: 'qr/edit/:qrId',
                                         method: RequestMethod.PATCH,
-                                }
+                                },
+                                { path: 'dynamic/status', method: RequestMethod.GET },
+                                { path: 'dynamic/update', method: RequestMethod.POST }
                         );
         }
 }
@@ -222,7 +225,7 @@ if (process.env.NODE_ENV !== 'production') {
         console.log('JWT_SECRET:', process.env.JWT_SECRET);
 }
 
-// MYSQL LARAGON
+// // MYSQL LARAGON
 
 // import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 // import { TypeOrmModule } from '@nestjs/typeorm';
@@ -262,7 +265,7 @@ if (process.env.NODE_ENV !== 'production') {
 // import { ErrorFeedbackModule } from './modules/feedback/error-feedback/error-feedback.module';
 // import { UserFeedbackModule } from './modules/feedback/user-feedback/user-feedback.module';
 // import { AI_Module } from './modules/auth/AI_reply/ai.module';
-
+// import { DynamicModule } from './modules/dynamic/dynamic.module';
 // // Controllers
 // import { ImageKitController } from './imagekit/imagekit.controller';
 
@@ -329,6 +332,7 @@ if (process.env.NODE_ENV !== 'production') {
 //                 ErrorFeedbackModule,
 //                 UserFeedbackModule,
 //                 AI_Module,
+//                 DynamicModule,
 //         ],
 //         controllers: [ImageKitController],
 // })
@@ -358,6 +362,8 @@ if (process.env.NODE_ENV !== 'production') {
 //                                         method: RequestMethod.GET,
 //                                 },
 //                                 { path: 'qr/public/qrs/:userId', method: RequestMethod.GET }
+
+//                                 // Dynamic Island
 //                         )
 //                         .forRoutes(
 //                                 { path: 'users/profile', method: RequestMethod.GET },
@@ -414,7 +420,10 @@ if (process.env.NODE_ENV !== 'production') {
 //                                 {
 //                                         path: 'qr/edit/:qrId',
 //                                         method: RequestMethod.PATCH,
-//                                 }
+//                                 },
+
+//                                 { path: 'dynamic/status', method: RequestMethod.GET },
+//                                 { path: 'dynamic/update', method: RequestMethod.POST }
 //                         );
 //         }
 // }
