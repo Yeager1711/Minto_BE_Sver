@@ -21,13 +21,21 @@ export class DynamicController {
         @Post('update')
         updateState(
                 @Req() req: AuthenticatedRequest,
-                @Body() body: { state: 'minimal' | 'compact' | 'expanded'; [key: string]: any }
+                @Body()
+                body: {
+                        state: 'minimal' | 'compact' | 'expanded';
+                        TypeContextCollapsed?: boolean;
+                        [key: string]: any;
+                }
         ) {
                 const userId = req.user?.user_id;
                 if (!userId) {
                         return { error: 'Unauthorized' };
                 }
-                const { state, ...data } = body;
-                return this.dynamicService.setState(userId, state, data);
+                const { state, TypeContextCollapsed = true, ...data } = body; // Mặc định TypeContextCollapsed là true
+                return this.dynamicService.setState(userId, state, {
+                        TypeContextCollapsed,
+                        ...data,
+                });
         }
 }

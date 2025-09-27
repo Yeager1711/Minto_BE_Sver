@@ -11,24 +11,24 @@ export interface DynamicData {
         time?: string;
         action?: string;
         duration?: number;
+        TypeContextCollapsed?: boolean; // Thêm trường mới
 }
 
 @Injectable()
 export class DynamicService {
         private readonly logger = new Logger(DynamicService.name);
-
-        // Map userId -> state/data riêng
         private userStates = new Map<number, DynamicData>();
 
         getStatus(userId: number) {
                 const userState = this.userStates.get(userId);
                 if (!userState) {
-                        const defaultState = {
+                        const defaultState: DynamicData = {
                                 state: 'compact',
                                 title: 'Chưa có dữ liệu',
                                 content: { message: '', note: '' },
                                 time: '',
                                 action: '',
+                                TypeContextCollapsed: false, // Mặc định không collapse
                         };
                         this.logger.debug(`=========================================================
 Dynamic Returning state (default): ${JSON.stringify(defaultState, null, 2)}`);
