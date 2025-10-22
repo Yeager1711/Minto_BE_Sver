@@ -8,7 +8,8 @@ async function bootstrap() {
         const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
         const configService = app.get(ConfigService);
-        const port = process.env.PORT || configService.get<number>('PORT') || 8080;
+        // const port = process.env.PORT || configService.get<number>('PORT') || 5000;
+        const port = parseInt(process.env.PORT || configService.get<string>('PORT') || '4999', 10);
 
         const allowedOrigins = configService
                 .get<string>('CORS_ORIGINS')
