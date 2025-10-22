@@ -10,7 +10,8 @@ async function bootstrap() {
         const configService = app.get(ConfigService);
         // const port = process.env.PORT || configService.get<number>('PORT') || 5000;
         const port = parseInt(process.env.PORT || configService.get<string>('PORT') || '4999', 10);
-
+        console.log(`Starting server on port ${port}`);
+        
         const allowedOrigins = configService
                 .get<string>('CORS_ORIGINS')
                 ?.split(',')
