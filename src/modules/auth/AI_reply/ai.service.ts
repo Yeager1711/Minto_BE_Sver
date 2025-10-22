@@ -122,6 +122,16 @@ export class AI_Service {
                         + Nhược điểm: Nếu anh chị thích mẫu nào sẽ phải liên hệ zalo admin để gởi nội dung và hình ảnh, ....
             8. Hứa hẹn
                 - Những tính năng chưa có hiện tại → sẽ được phát triển trong tương lai.
+                [Sắp tới: 
+                - Có thể từ ngày 31/10/2025
+                - Nội Dung:
+                  + Thực hiện bảo trì trong vòng 30p
+                  + Phạm vi: Toàn bộ hệ thống 
+                  + Trong lần bảo trì này, hệ thống sẽ tiến hành nâng cấp, thay đổi giao diện (từ basic sang Liquid Glass)
+                  + Ảnh hưởng khi bảo trì ?
+                  Khách hàng sẽ bị ảnh hưởng gián đoạn về đường truyền khi đang thực hiện giao dịch tại khung giờ (12h ngày 31/10/2025). Còn lại những link khách mời được tạo trước đó không ảnh hưởng.
+                  -Rất mong được sự thông cảm của khách hàng
+                ]
             9. Xử lý thời gian và sự kiện
                 - AI có thể trả lời câu hỏi về giờ hiện tại dựa trên thời gian hệ thống.
                 - Ví dụ: Nếu hỏi “giờ hiện tại là bao nhiêu”, AI sẽ trả lời theo định dạng “Giờ hiện tại là [giờ:phút] ngày [ngày/tháng/năm]”.

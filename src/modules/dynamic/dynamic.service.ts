@@ -1,34 +1,34 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-export interface DynamicData {
+export interface DynamicPayload {
         state: 'minimal' | 'compact' | 'expanded';
-        type?: string;
-        title?: string;
-        content?: {
-                message?: string;
-                note?: string;
-        };
+        TypeContextCollapsed?: boolean;
+        action: 'success' | 'failure';
+        actionTitle?: string;
+        describle?: string;
         time?: string;
-        action?: string;
+        type?: string;
         duration?: number;
-        TypeContextCollapsed?: boolean; // Thêm trường mới
+        [key: string]: any; // Cho phép mở rộng trường tùy chọn
 }
 
 @Injectable()
 export class DynamicService {
         private readonly logger = new Logger(DynamicService.name);
-        private userStates = new Map<number, DynamicData>();
+        private userStates = new Map<number, DynamicPayload>();
 
-        getStatus(userId: number) {
+        getStatus(userId: number): DynamicPayload {
                 const userState = this.userStates.get(userId);
                 if (!userState) {
-                        const defaultState: DynamicData = {
+                        const defaultState: DynamicPayload = {
                                 state: 'compact',
-                                title: 'Chưa có dữ liệu',
-                                content: { message: '', note: '' },
-                                time: '',
-                                action: '',
-                                TypeContextCollapsed: false, // Mặc định không collapse
+                                TypeContextCollapsed: false,
+                                action: 'failure',
+                                actionTitle: 'Chưa có dữ liệu',
+                                describle: 'Không có thông tin trạng thái hiện tại.',
+                                time: new Date().toISOString(),
+                                type: 'notification',
+                                duration: 3500,
                         };
                         this.logger.debug(`=========================================================
 Dynamic Returning state (default): ${JSON.stringify(defaultState, null, 2)}`);
@@ -40,16 +40,31 @@ Dynamic Returning state: ${JSON.stringify(userState, null, 2)}`);
                 return userState;
         }
 
-        setState(userId: number, state: 'minimal' | 'compact' | 'expanded', data?: any) {
-                const newState: DynamicData = {
-                        state,
-                        ...data,
+        setState(userId: number, payload: DynamicPayload): DynamicPayload {
+                const newState: DynamicPayload = {
+                        ...payload,
+                        time: payload.time || new Date().toISOString(), // Đảm bảo có thời gian
+                        type: payload.type || 'notification', // Mặc định loại
+                        duration: payload.duration || 3500, // Mặc định thời gian hiển thị
                 };
 
                 this.userStates.set(userId, newState);
 
-                this.logger.debug(`=========================================================
-Dynamic Setting state: ${state} ${JSON.stringify(data, null, 2)}`);
+                this.logger.debug(
+                        `=========================================================\nDynamic Setting state: ${newState.state} ${JSON.stringify(
+                                {
+                                        TypeContextCollapsed: newState.TypeContextCollapsed,
+                                        action: newState.action,
+                                        actionTitle: newState.actionTitle,
+                                        describle: newState.describle,
+                                        time: newState.time,
+                                        type: newState.type,
+                                        duration: newState.duration,
+                                },
+                                null,
+                                2
+                        )}`
+                );
 
                 return newState;
         }

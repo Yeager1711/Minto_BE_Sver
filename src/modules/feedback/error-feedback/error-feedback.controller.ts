@@ -41,6 +41,26 @@ export class ErrorFeedbackController {
                 return { feedbacks };
         }
 
+        // ✅ API MỚI: Lấy phản hồi đã được admin xử lý hoặc xem qua
+        @Get('user-feedbacks/processed')
+        async getProcessedUserErrorFeedbacks(@Req() req: AuthenticatedRequest) {
+                const userId = req.user?.user_id;
+                if (!userId) throw new Error('User not authenticated');
+
+                const feedbacks =
+                        await this.errorFeedbackService.getProcessedUserErrorFeedbacks(userId);
+                return { feedbacks };
+        }
+
+        // ✅  Cập nhật trạng thái is_read của feedback
+        @Patch(':id/read')
+        async markFeedbackAsRead(@Param('id') feedbackId: string) {
+                const feedback = await this.errorFeedbackService.markFeedbackAsRead(
+                        parseInt(feedbackId)
+                );
+                return { message: 'Đánh dấu phản hồi là đã đọc thành công', feedback };
+        }
+
         @Patch(':id')
         async updateErrorFeedbackStatus(
                 @Param('id') feedbackId: string,

@@ -102,12 +102,13 @@ export class PayOSService {
                                 orderCode: paymentId,
                                 amount: totalAmount,
                                 description,
-                                returnUrl: `${process.env.NEXT_PUBLIC_PAYOS_RETURN_URL}?templateId=${templateId}&checkOut=true`,
-                                cancelUrl: `${process.env.NEXT_PUBLIC_PAYOS_RETURN_URL}?templateId=${templateId}&checkOut=true&status=CANCELLED`,
+                                returnUrl: `${process.env.NEXT_PUBLIC_PAYOS_RETURN_URL}?templateId=${templateId}&checkOut=true&status=PAID&orderCode=${paymentId}&amount=${totalAmount}`,
+                                cancelUrl: `${process.env.NEXT_PUBLIC_PAYOS_RETURN_URL}?templateId=${templateId}&checkOut=true&status=CANCELLED&orderCode=${paymentId}&amount=${totalAmount}`,
                                 buyerEmail: user.email,
                                 buyerName: user.full_name,
                                 buyerPhone: user.phone || '',
                         };
+
                         const paymentLink = await this.payos.createPaymentLink(paymentData);
 
                         return {

@@ -7,9 +7,9 @@ import * as bodyParser from 'body-parser';
 async function bootstrap() {
         const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-        // Get configuration from ConfigService
         const configService = app.get(ConfigService);
-        const port = configService.get<number>('PORT') || 5000;
+        const port = process.env.PORT || configService.get<number>('PORT') || 8080;
+
         const allowedOrigins = configService
                 .get<string>('CORS_ORIGINS')
                 ?.split(',')
@@ -17,9 +17,10 @@ async function bootstrap() {
                 'http://localhost:9000',
                 'https://mintoinvitions.netlify.app',
                 'https://minto-one.vercel.app',
+                'https://minto-be-sver.fly.dev',
         ];
 
-        // Configure CORS
+        // ✅ Enable CORS
         app.enableCors({
                 origin: (origin, callback) => {
                         const normalizedOrigin = origin?.replace(/\/$/, '');
@@ -34,13 +35,13 @@ async function bootstrap() {
                 allowedHeaders: 'Content-Type, Authorization, ngrok-skip-browser-warning',
         });
 
-        // Increase request size limit to 10MB
+        // ✅ Allow larger body
         app.use(bodyParser.json({ limit: '10mb' }));
         app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-        // Listen on configured port
-        await app.listen(port);
-        console.log(`Application is running on: http://localhost:${port}`);
+        // ✅ Important: listen on 0.0.0.0
+        await app.listen(port, '0.0.0.0');
+        console.log(`🚀 Server is running on http://0.0.0.0:${port}`);
 }
 
 bootstrap();

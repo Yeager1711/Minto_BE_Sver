@@ -34,4 +34,14 @@ export class Error_Feedbacks {
 
         @Column({ type: 'text', nullable: true, comment: 'Ghi chú giải quyết lỗi' })
         resolution_notes: string;
+
+        // 🟢 Thêm cột này
+        @Column({
+                type: 'tinyint',
+                width: 1,
+                default: 0,
+                nullable: false,
+                comment: 'Trạng thái xem thông báo (0 = chưa xem, 1 = đã xem)',
+        })
+        is_read: number;
 }

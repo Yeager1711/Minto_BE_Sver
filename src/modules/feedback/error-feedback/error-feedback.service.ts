@@ -37,6 +37,7 @@ export class ErrorFeedbackService {
                         error_message: errorMessage,
                         submitted_at: new Date(),
                         status: 'PENDING',
+                        is_read: 0,
                 });
 
                 return this.errorFeedbackRepository.save(feedback);
@@ -68,6 +69,54 @@ export class ErrorFeedbackService {
                 return feedbacks;
         }
 
+        // ✅ HÀM: Lấy phản hồi đã được admin xử lý (status != 'PENDING')
+        async getProcessedUserErrorFeedbacks(userId: number): Promise<Error_Feedbacks[]> {
+                const feedbacks = await this.errorFeedbackRepository.find({
+                        where: [
+                                { user: { user_id: userId }, status: 'RESOLVED', is_read: 0 },
+                                { user: { user_id: userId }, status: 'IGNORED', is_read: 0 },
+                        ],
+                        select: {
+                                feedback_id: true,
+                                error_message: true,
+                                submitted_at: true,
+                                status: true,
+                                resolved_at: true,
+                                resolution_notes: true,
+                                is_read: true,
+                                user: {
+                                        user_id: true,
+                                        full_name: true,
+                                        email: true,
+                                },
+                        },
+                        relations: ['user'],
+                        order: { resolved_at: 'DESC' },
+                });
+
+                if (!feedbacks || feedbacks.length === 0) {
+                        throw new NotFoundException(
+                                `Không có phản hồi chưa đọc nào đã được admin xử lý cho user ${userId}`
+                        );
+                }
+
+                return feedbacks;
+        }
+        // Func Đánh dấu feedback là đã đọc
+        async markFeedbackAsRead(feedbackId: number): Promise<Error_Feedbacks> {
+                const feedback = await this.errorFeedbackRepository.findOne({
+                        where: { feedback_id: feedbackId },
+                        relations: ['user'],
+                });
+
+                if (!feedback) {
+                        throw new NotFoundException(`Không tìm thấy phản hồi với ID ${feedbackId}`);
+                }
+
+                feedback.is_read = 1;
+                return this.errorFeedbackRepository.save(feedback);
+        }
+
         async getUserErrorFeedbacks(userId: number): Promise<Error_Feedbacks[]> {
                 const feedbacks = await this.errorFeedbackRepository.find({
                         where: { user: { user_id: userId } },
@@ -78,6 +127,7 @@ export class ErrorFeedbackService {
                                 status: true,
                                 resolved_at: true,
                                 resolution_notes: true,
+                                is_read: true,
                                 user: {
                                         user_id: true,
                                         full_name: true,

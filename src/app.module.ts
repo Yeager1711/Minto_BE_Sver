@@ -225,7 +225,7 @@ if (process.env.NODE_ENV !== 'production') {
         console.log('JWT_SECRET:', process.env.JWT_SECRET);
 }
 
-// // MYSQL LARAGON
+// MYSQL LARAGON
 
 // import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 // import { TypeOrmModule } from '@nestjs/typeorm';
@@ -392,6 +392,17 @@ if (process.env.NODE_ENV !== 'production') {
 //                                         path: 'error-feedback/user-feedbacks',
 //                                         method: RequestMethod.GET,
 //                                 },
+//                                 // --------------------
+//                                 {
+//                                         path: 'error-feedback/user-feedbacks/processed',
+//                                         method: RequestMethod.GET,
+//                                 },
+//                                 {
+//                                         path: 'error-feedback/:id/read',
+//                                         method: RequestMethod.PATCH,
+//                                 },
+//                                 // --------------------
+
 //                                 {
 //                                         path: 'users/check-discount-eligibility',
 //                                         method: RequestMethod.GET,

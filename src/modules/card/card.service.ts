@@ -313,7 +313,9 @@ export class CardService {
                 );
         }
 
-        async getUserPaidTemplates(userId: number): Promise<any[]> {
+        async getUserPaidTemplates(
+                userId: number
+        ): Promise<{ paidTemplates: { orders_success: any[]; orders_cancel: any[] } }> {
                 this.logger.info(`Lấy danh sách template đã thanh toán cho user ${userId}`);
 
                 if (!Number.isInteger(userId) || userId <= 0) {
@@ -329,10 +331,6 @@ export class CardService {
                                 .leftJoinAndSelect('invitations.guests', 'guests')
                                 .leftJoinAndSelect('card.payments', 'payments')
                                 .where('card.user_id = :userId', { userId })
-                                .andWhere('card.status = :status', { status: 'COMPLETED' })
-                                .andWhere('payments.status = :paymentStatus', {
-                                        paymentStatus: 'COMPLETED',
-                                })
                                 .select([
                                         'card.card_id',
                                         'template.template_id',
@@ -343,7 +341,6 @@ export class CardService {
                                         'guests.guest_id',
                                         'guests.invitation_id',
                                         'guests.full_name',
-                                        'guests.card_id', // Thêm guests.card_id vào select
                                         'payments.amount',
                                         'payments.payment_date',
                                         'payments.status',
@@ -355,55 +352,71 @@ export class CardService {
                                 this.logger.warn(
                                         `Không tìm thấy template đã thanh toán cho user ${userId}`
                                 );
-                                return [];
+                                return { paidTemplates: { orders_success: [], orders_cancel: [] } };
                         }
 
-                        // Nhóm dữ liệu theo card_id
-                        const result = cards.reduce((acc: any[], card) => {
-                                const existingCard = acc.find(
-                                        (item) => item.card_id === card.card_id
-                                );
+                        // Nhóm dữ liệu theo card_id và phân loại
+                        const { orders_success, orders_cancel } = cards.reduce(
+                                (acc: { orders_success: any[]; orders_cancel: any[] }, card) => {
+                                        const templateData = {
+                                                template_id: card.template.template_id,
+                                                name: card.template.name,
+                                                image_url: card.template.image_url,
+                                                price: card.template.price,
+                                                payments: card.payments.map((payment) => ({
+                                                        amount: payment.amount,
+                                                        payment_date: payment.payment_date,
+                                                        status: payment.status,
+                                                        payment_method: payment.payment_method,
+                                                })),
+                                                guests:
+                                                        card.invitations?.flatMap(
+                                                                (invitation) =>
+                                                                        invitation.guests?.map(
+                                                                                (guest) => ({
+                                                                                        guest_id: guest.guest_id,
+                                                                                        invitation_id:
+                                                                                                guest.invitation_id,
+                                                                                        full_name: guest.full_name,
+                                                                                })
+                                                                        ) || []
+                                                        ) || [],
+                                        };
 
-                                const templateData = {
-                                        template_id: card.template.template_id,
-                                        name: card.template.name,
-                                        image_url: card.template.image_url,
-                                        price: card.template.price,
-                                        payments: card.payments.map((payment) => ({
-                                                amount: payment.amount,
-                                                payment_date: payment.payment_date,
-                                                status: payment.status,
-                                                payment_method: payment.payment_method,
-                                        })),
-                                        guests:
-                                                card.invitations?.flatMap(
-                                                        (invitation) =>
-                                                                invitation.guests?.map((guest) => ({
-                                                                        guest_id: guest.guest_id,
-                                                                        invitation_id:
-                                                                                guest.invitation_id,
-                                                                        full_name: guest.full_name,
-                                                                        card_id: guest.card_id, // Thêm card_id vào dữ liệu trả về
-                                                                })) || []
-                                                ) || [],
-                                };
+                                        const hasGuests = templateData.guests.length > 0;
+                                        const allPaymentsCompleted =
+                                                card.payments.length > 0 &&
+                                                card.payments.every(
+                                                        (payment) => payment.status === 'COMPLETED'
+                                                );
 
-                                if (existingCard) {
-                                        // Nếu card_id đã tồn tại, không cần merge vì mỗi card_id chỉ có một template
-                                } else {
-                                        acc.push({
+                                        const cardEntry = {
                                                 card_id: card.card_id,
-                                                template: templateData,
-                                        });
-                                }
+                                                template: {
+                                                        template_id: templateData.template_id,
+                                                        name: templateData.name,
+                                                        image_url: templateData.image_url,
+                                                        price: templateData.price,
+                                                        payments: templateData.payments,
+                                                        guests: templateData.guests,
+                                                },
+                                        };
 
-                                return acc;
-                        }, []);
+                                        if (hasGuests && allPaymentsCompleted) {
+                                                acc.orders_success.push(cardEntry);
+                                        } else {
+                                                acc.orders_cancel.push(cardEntry);
+                                        }
+
+                                        return acc;
+                                },
+                                { orders_success: [], orders_cancel: [] }
+                        );
 
                         this.logger.info(
-                                `Tìm thấy ${cards.length} template đã thanh toán cho user ${userId}`
+                                `Tìm thấy ${orders_success.length} template thành công và ${orders_cancel.length} đơn bị hủy cho user ${userId}`
                         );
-                        return result;
+                        return { paidTemplates: { orders_success, orders_cancel } };
                 } catch (error) {
                         this.logger.error(`Lỗi khi lấy danh sách template: ${error.message}`, {
                                 stack: error.stack,
